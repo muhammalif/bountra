@@ -1,0 +1,22 @@
+# Foundry
+contracts/out/
+contracts/cache/
+contracts/broadcast/
+
+# Node
+node_modules/
+dist/
+.next/
+*.log
+
+# Env
+.env
+.env.local
+.env*.local
+
+# Database
+agent/data/*.db
+agent/data/*.db-journal
+
+# OS
+.DS_Store
