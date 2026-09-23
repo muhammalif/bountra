@@ -133,7 +133,6 @@ export async function apiRoutes(app: FastifyInstance) {
         return reply.code(400).send({ error: "Missing required audit parameters" });
       }
 
-      // Step 1: Security check (Anti-tampering)
       const tamperingCheck = checkTestTampering(changedFiles);
       if (!tamperingCheck.ok) {
         const audit = await createAuditLog({
@@ -156,7 +155,6 @@ export async function apiRoutes(app: FastifyInstance) {
         });
       }
 
-      // Step 2: AI Evaluation via Gemini (or mock if no key)
       const aiResult = process.env.GEMINI_API_KEY
         ? await evaluatePrWithGemini({ issueTitle, issueBody, prTitle, prBody, diff })
         : mockEvaluatePr({ issueTitle, issueBody, prTitle, prBody, diff });
@@ -165,7 +163,6 @@ export async function apiRoutes(app: FastifyInstance) {
       let rawHash: Hex | null = null;
       let digest: Hex | null = null;
 
-      // Step 3: Sign if passed
       if (aiResult.verdict === "passed" && !aiResult.tamperingDetected) {
         const privateKey = (process.env.AGENT_PRIVATE_KEY ||
           "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80") as Hex;
@@ -186,7 +183,6 @@ export async function apiRoutes(app: FastifyInstance) {
         digest = signResult.digest;
       }
 
-      // Step 4: Persist audit log
       const audit = await createAuditLog({
         bountyId,
         prUrl,

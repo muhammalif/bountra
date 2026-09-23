@@ -1,7 +1,3 @@
-/**
- * Security Gates & Anti-Prompt-Injection Sandboxing
- */
-
 const PROTECTED_FILE_PATTERNS = [
   /^\.github\/workflows\//i,
   /^contracts\/test\//i,

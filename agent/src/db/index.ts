@@ -83,12 +83,7 @@ export function createDatabaseConnection(dbPath: string = DEFAULT_DB_PATH) {
   return { sqlite, db };
 }
 
-// Default instance for application runtime
 export const { sqlite, db } = createDatabaseConnection();
-
-// ==========================================
-// DB Helper Functions
-// ==========================================
 
 export async function createBountyRecord(data: NewBounty, dbInstance = db) {
   return dbInstance.insert(schema.bounties).values(data).returning().get();
