@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #0D0E12;
+  --bg-secondary: #16181D;
+  --bg-tertiary: #1E2026;
+  --border: #2B313A;
+  --brand-primary: #F0B90B;
+  --brand-hover: #D4A20A;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: #F5F5F5;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Monospaced code styling */
+code, pre, kbd {
+  font-family: var(--font-jetbrains-mono), monospace;
+}
+
+/* Custom Sleek Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0D0E12;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2B313A;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3B424D;
+}
+
+/* Focus styles for WCAG AA */
+*:focus-visible {
+  outline: 2px solid #F0B90B;
+  outline-offset: 2px;
+}

@@ -11,3 +11,9 @@ remappings = [
     "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
     "forge-std/=lib/forge-std/src/"
 ]
+
+[etherscan]
+bsc_testnet = { key = "${BSCSCAN_API_KEY}", url = "https://api-testnet.bscscan.com/api" }
+bsc = { key = "${BSCSCAN_API_KEY}", url = "https://api.bscscan.com/api" }
+opbnb_testnet = { key = "${OPBNBSCAN_API_KEY}", url = "https://api-opbnb-testnet.bscscan.com/api" }
+
