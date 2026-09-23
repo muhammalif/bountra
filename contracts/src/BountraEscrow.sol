@@ -25,12 +25,12 @@ contract BountraEscrow is ReentrancyGuard {
 
     struct Bounty {
         address creator;
-        address token;
-        uint256 amount;
-        string issueUrl;
-        uint256 deadline;
         bool claimed;
         bool cancelled;
+        address token;
+        uint256 amount;
+        uint256 deadline;
+        string issueUrl;
     }
 
     mapping(uint256 => Bounty) public bounties;

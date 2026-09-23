@@ -6,13 +6,13 @@
 
 ```solidity
 struct Bounty {
-    address creator;          // Project owner who funded the bounty
-    address token;            // ERC-20 token address (USDT / WBNB)
-    uint256 amount;           // Reward amount in token decimals
-    string issueUrl;          // GitHub Issue URL (e.g. "https://github.com/org/repo/issues/12")
-    uint256 deadline;         // Unix timestamp after which creator can refund
-    bool claimed;             // True once developer successfully claims
-    bool cancelled;           // True if creator refunded after deadline
+    address creator;          // Project owner who funded the bounty (20 bytes)
+    bool claimed;             // True once developer successfully claims (1 byte)
+    bool cancelled;           // True if creator refunded after deadline (1 byte) -> Slot 0 (22/32 bytes)
+    address token;            // ERC-20 token address (USDT / WBNB) (20 bytes) -> Slot 1
+    uint256 amount;           // Reward amount in token decimals -> Slot 2
+    uint256 deadline;         // Unix timestamp after which creator can refund -> Slot 3
+    string issueUrl;          // GitHub Issue URL -> Slot 4
 }
 ```
 
