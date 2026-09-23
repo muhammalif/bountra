@@ -173,7 +173,7 @@ export async function apiRoutes(app: FastifyInstance) {
             devWallet: devWallet as Address,
             commitHash,
             prUrl,
-            contractAddress,
+            contractAddress: contractAddress as Address,
             chainId
           },
           privateKey

@@ -8,7 +8,7 @@ import type { NewBounty, NewAuditLog, NewWebhookEvent } from "./schema.js";
 
 const DEFAULT_DB_PATH = process.env.DATABASE_PATH || "./data/bountra.db";
 
-export function createDatabaseConnection(dbPath: string = DEFAULT_DB_PATH) {
+export function createDatabaseConnection(dbPath: string = DEFAULT_DB_PATH): { sqlite: InstanceType<typeof Database>; db: ReturnType<typeof drizzle> } {
   if (dbPath !== ":memory:") {
     const dir = path.dirname(dbPath);
     if (!fs.existsSync(dir)) {
