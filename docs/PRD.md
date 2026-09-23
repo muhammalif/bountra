@@ -110,7 +110,7 @@
 
 - [ ] Next.js 14 landing page: hero, animated beam pipeline, live audit terminal
 - [ ] Dashboard: bounty data table, filters, detail drawer, create bounty modal
-- [ ] RainbowKit wallet connection to BNB Testnet
+- [ ] Privy wallet connection & GitHub auth with embedded EVM wallet to BNB Testnet
 - [ ] Live demo recording (3-minute video)
 - [ ] Pitch deck finalized & hackathon submission
 - **Exit:** Complete demo video showing PR → AI review → BSCScan payout transaction

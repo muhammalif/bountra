@@ -20,9 +20,9 @@
 - Agent private key stored in `.env` — never committed, never logged, never sent to frontend
 
 ### Frontend
-- Wallet connection via RainbowKit — no custom wallet adapter
-- All contract reads via Wagmi hooks (`useReadContract`)
-- All contract writes via Wagmi hooks (`useWriteContract`) with confirmation wait
+- Wallet connection & Auth via Privy (GitHub login + Embedded EVM Wallet + External Wallets)
+- All contract reads via Wagmi / Viem hooks
+- All contract writes via Wagmi / Viem hooks with confirmation wait
 - No direct `fetch()` to blockchain RPC — always through Viem/Wagmi abstraction
 
 ---

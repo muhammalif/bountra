@@ -19,7 +19,7 @@ Autonomous GitHub PR Auditor & Code-Gated Milestone Escrow on BNB Chain.
 
 - **Smart Contract:** Solidity 0.8.28 (Foundry, OpenZeppelin v5) → `contracts/`
 - **Agent Backend:** Node.js / TypeScript (Fastify, Octokit, Viem, Gemini 1.5/2.0 Flash) → `agent/`
-- **Frontend:** Next.js 14 App Router (Tailwind CSS, shadcn/ui, Magic UI, RainbowKit/Wagmi v2) → `web/`
+- **Frontend:** Next.js 14 App Router (Tailwind CSS, shadcn/ui, Magic UI, Privy Auth & Embedded Wallet + Viem/Wagmi) → `web/`
 - **Network:** BNB Smart Chain Testnet / opBNB Testnet
 - **Database:** SQLite (Drizzle ORM) — off-chain audit logs, webhook-bounty mapping
 

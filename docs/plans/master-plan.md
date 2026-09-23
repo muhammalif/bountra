@@ -74,7 +74,7 @@ Related: [[_MOC/Index|Knowledge Map]] · [[Projects/BNB Hackathon 2026 - Project
 | **GitHub Integration** | Octokit REST & Webhooks SDK | Pengambilan context issue, `git diff`, commit hash, status check runs, dan auto-commenting review. |
 | **AI Evaluation Engine** | Google Gemini 1.5 / 2.0 Flash API | Inferensi berkecepatan tinggi, free-tier generous (Google AI Studio), dukungan *Native Structured Outputs* (JSON Schema ketat). |
 | **Web3 Client SDK** | Viem / Wagmi v2 | Interaksi blockchain ringan, penanganan signature ECDSA, dan wallet connection. |
-| **Frontend Dashboard** | Next.js (App Router), Tailwind CSS, RainbowKit | Antarmuka pembuatan bounty, dashboard explorer, dan live review tracker. |
+| **Frontend Dashboard** | Next.js (App Router), Tailwind CSS, Privy + Wagmi | Antarmuka pembuatan bounty, dashboard explorer, dan live review tracker. |
 
 ---
 
@@ -121,7 +121,7 @@ Related: [[_MOC/Index|Knowledge Map]] · [[Projects/BNB Hackathon 2026 - Project
 * **GitHub PR Commenter:** Memposting hasil audit langsung sebagai komentar transparan di PR developer.
 
 #### C. Web Frontend (Next.js Dashboard)
-* **Wallet Connect:** RainbowKit terhubung ke BNB Testnet.
+* **Wallet & Auth Connect:** Privy (GitHub Social Login + Embedded EVM Wallet + External Wallets seperti MetaMask/Rabby) terhubung ke BNB Testnet.
 * **Bounty Creation Hub:** Form untuk paste link GitHub Issue + input jumlah reward token.
 * **Live Explorer:** Melihat daftar bounty aktif, status review AI secara real-time, dan bukti hash transaksi BSCScan.
 
@@ -186,7 +186,7 @@ Related: [[_MOC/Index|Knowledge Map]] · [[Projects/BNB Hackathon 2026 - Project
 * [ ] Integrasi ECDSA Signer menggunakan Viem wallet.
 
 ### Sprint H3: Frontend Dashboard & Live Demo (Day 3)
-* [ ] Setup Next.js 14 App Router + RainbowKit / Wagmi v2.
+* [ ] Setup Next.js 14 App Router + Privy Auth & Embedded Wallet / Wagmi + Magic UI & shadcn/ui.
 * [ ] Form pembuatan bounty + integrasi contract `createBounty`.
 * [ ] Explorer bounty aktif + live status tracker.
 * [ ] Rekaman live demo end-to-end (PR dibuat $\rightarrow$ Bot review $\rightarrow$ Dana cair di BSCScan).

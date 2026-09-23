@@ -101,7 +101,7 @@ agent/
 ```
 web/
 ├── app/
-│   ├── layout.tsx              # Root layout + Web3Provider (RainbowKit/Wagmi)
+│   ├── layout.tsx              # Root layout + Web3Provider (Privy + Wagmi)
 │   ├── page.tsx                # Landing page (Hero + Terminal + Explorer)
 │   └── dashboard/
 │       └── page.tsx            # Dashboard (Table + Drawer + Modal)
@@ -215,7 +215,7 @@ web/
 | GitHub SDK | Octokit | Latest | REST API + Webhook verification |
 | AI Engine | Gemini 1.5/2.0 Flash | Latest | Code audit with structured outputs |
 | Web3 SDK | Viem | v2.x | Contract interaction, ECDSA signing |
-| Wallet SDK | Wagmi + RainbowKit | v2.x | Frontend wallet connection |
+| Wallet & Auth SDK | Privy (@privy-io/react-auth) + Wagmi | Latest | Embedded wallet, GitHub auth & external wallets |
 | Frontend | Next.js | 14.x | App Router, SSR landing + dashboard |
 | Styling | Tailwind CSS | v3.x | Utility-first CSS |
 | UI Components | shadcn/ui + Magic UI | Latest | DataTable, Dialog, Terminal, Beam |
