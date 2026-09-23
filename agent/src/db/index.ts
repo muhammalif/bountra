@@ -83,7 +83,8 @@ export function createDatabaseConnection(dbPath: string = DEFAULT_DB_PATH): { sq
   return { sqlite, db };
 }
 
-export const { sqlite, db } = createDatabaseConnection();
+const defaultConn = createDatabaseConnection();
+export const db = defaultConn.db;
 
 export async function createBountyRecord(data: NewBounty, dbInstance = db) {
   return dbInstance.insert(schema.bounties).values(data).returning().get();
