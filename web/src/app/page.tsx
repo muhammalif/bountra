@@ -29,7 +29,6 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen flex flex-col justify-between">
-      {/* Navbar */}
       <header className="border-b border-surface-border bg-surface-secondary/80 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -76,9 +75,7 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col justify-center">
-        {/* Shimmer Badge */}
         <div className="flex justify-center mb-6">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-secondary border border-surface-border text-xs text-brand-primary font-medium">
             <Sparkles className="w-3.5 h-3.5 animate-pulse" />
@@ -86,7 +83,6 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Hero Title */}
         <div className="text-center max-w-3xl mx-auto mb-10">
           <h1 className="text-4xl sm:text-6xl font-bold tracking-tight text-content-primary leading-tight mb-4">
             Autonomous GitHub PR Auditor & <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary via-yellow-300 to-amber-500">Escrow</span>
@@ -96,9 +92,7 @@ export default function HomePage() {
           </p>
         </div>
 
-        {/* Live Protocol Status Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto w-full mb-12">
-          {/* Card 1: Escrow Contract */}
           <div className="p-5 rounded-xl bg-surface-secondary border border-surface-border hover:border-surface-border/80 transition-colors">
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-medium text-content-secondary uppercase tracking-wider">Escrow Contract</span>
@@ -117,7 +111,6 @@ export default function HomePage() {
             </a>
           </div>
 
-          {/* Card 2: AI Agent Signer */}
           <div className="p-5 rounded-xl bg-surface-secondary border border-surface-border hover:border-surface-border/80 transition-colors">
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-medium text-content-secondary uppercase tracking-wider">Agent Signer</span>
@@ -132,7 +125,6 @@ export default function HomePage() {
             </span>
           </div>
 
-          {/* Card 3: Total Bounties */}
           <div className="p-5 rounded-xl bg-surface-secondary border border-surface-border hover:border-surface-border/80 transition-colors">
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-medium text-content-secondary uppercase tracking-wider">Total Bounties</span>
@@ -147,7 +139,6 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Feature Pipeline Flow Preview */}
         <div className="max-w-2xl mx-auto w-full p-6 rounded-2xl bg-surface-secondary/50 border border-surface-border text-center">
           <h2 className="text-sm font-semibold text-content-primary mb-4 flex items-center justify-center gap-2">
             <GitPullRequest className="w-4 h-4 text-brand-primary" />
@@ -170,7 +161,6 @@ export default function HomePage() {
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="border-t border-surface-border py-6 bg-surface-primary">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-content-muted">
           <span>Bountra © 2026 — Built for BNB Chain Hackathon.</span>

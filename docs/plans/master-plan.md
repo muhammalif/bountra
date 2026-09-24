@@ -174,31 +174,31 @@ Related: [[_MOC/Index|Knowledge Map]] · [[Projects/BNB Hackathon 2026 - Project
 * [x] Naming & branding (`Bountra`).
 * [x] Formulasi rencana mitigasi keamanan & anti-prompt injection.
 
-### Sprint H1: Smart Contract & Foundry Lab (Day 1)
-* [ ] Setup repo Foundry dengan compiler `0.8.28` (EVM `cancun`) & penulisan `BountraEscrow.sol`.
-* [ ] Unit test smart contract (deposit, claim with signature, replay protection, refund).
-* [ ] Deploy & verifikasi contract ke BSC Testnet / opBNB Testnet.
+### Sprint H1: Smart Contract & Foundry Lab (Day 1 - Completed)
+* [x] Setup repo Foundry dengan compiler `0.8.28` (EVM `cancun`) & penulisan `BountraEscrow.sol`.
+* [x] Unit test smart contract (deposit, claim with signature, replay protection, refund) — 15/15 pass.
+* [x] Deploy contract ke BSC Testnet (`0xbe576879961Bd8cdf7CfA72F146C8a3E352c7260`).
 
-### Sprint H2: Agent Backend & Evaluation Engine (Day 2)
-* [ ] Setup GitHub App / Webhook listener service.
-* [ ] Integrasi Octokit API (fetch issue, diff, commit, check runs).
-* [ ] Implementasi prompt engine Gemini 1.5 / 2.0 Flash dengan Structured Outputs (JSON Schema).
-* [ ] Integrasi ECDSA Signer menggunakan Viem wallet.
+### Sprint H2: Agent Backend & Evaluation Engine (Day 2 - Completed)
+* [x] Setup Fastify Webhook listener & API service.
+* [x] Integrasi Octokit API (fetch issue, diff, commit, check runs).
+* [x] Implementasi prompt engine Gemini 2.0 Flash dengan 5-layer Security Gates.
+* [x] Integrasi ECDSA Signer menggunakan Viem wallet (keccak256 digest + ecrecover on-chain).
 
-### Sprint H3: Frontend Dashboard & Live Demo (Day 3)
-* [ ] Setup Next.js 14 App Router + Privy Auth & Embedded Wallet / Wagmi + Magic UI & shadcn/ui.
-* [ ] Form pembuatan bounty + integrasi contract `createBounty`.
-* [ ] Explorer bounty aktif + live status tracker.
-* [ ] Rekaman live demo end-to-end (PR dibuat $\rightarrow$ Bot review $\rightarrow$ Dana cair di BSCScan).
-* [ ] Finalisasi pitch deck & submission form.
+### Sprint H3: Frontend Dashboard & Live Demo (Day 3 - In Progress)
+* [x] **H3.1:** Setup Next.js 14 App Router + Privy Auth & Embedded Wallet + Wagmi + Tailwind CSS + dark theme.
+* [ ] **H3.2:** Hero Section (Magic UI Animated Beam: GitHub PR $\rightarrow$ Gemini AI $\rightarrow$ BNB Escrow).
+* [ ] **H3.3:** Live Audit Terminal Viewer (Real-time evaluation log streaming).
+* [ ] **H3.4:** Bounty Explorer Grid + Create Bounty Modal + Claim Bounty Drawer.
+* [ ] **H3.5:** End-to-End Demo Recording & Pitch Submission.
 
 ---
 
 ## 8. Status Progress
 
-* **Status Proyek:** 🟡 `in-progress` (Sprint H0 Selesai, Menuju Sprint H1)
-* **Current Phase:** Persiapan Repositori Smart Contract (Foundry).
-* **Next Immediate Action:** Inisialisasi workspace Foundry dan implementasi `BountraEscrow.sol` beserta unit test suite lengkap.
+* **Status Proyek:** 🟡 `in-progress` (Sprint H1 & H2 Selesai, Sprint H3.1 Selesai)
+* **Current Phase:** Sprint H3 Frontend Development (Menuju H3.2 Hero & Magic UI).
+* **Next Immediate Action:** Implementasi H3.2 Hero Section dengan Magic UI Animated Beam component.
 
 ---
 
