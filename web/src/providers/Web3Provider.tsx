@@ -11,7 +11,7 @@ interface Web3ProviderProps {
   children: ReactNode;
 }
 
-const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID || "cm1234567890bountra001";
+const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID || "cl00000000000000000000000";
 
 export function Web3Provider({ children }: Web3ProviderProps) {
   const [queryClient] = useState(() => new QueryClient({
