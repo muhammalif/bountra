@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
-import "./globals.css";
 import { Web3Provider } from "../providers/Web3Provider";
+import "./globals.css";
 
 const inter = Inter({
   subsets: ["latin"],
