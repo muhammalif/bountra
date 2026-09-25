@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { usePrivy } from "@privy-io/react-auth";
 import { ArrowDownRight, PlusCircle, ShieldCheck, Zap, Lock } from "lucide-react";
 import { AnimatedShinyText } from "../magicui/animated-shiny-text";
@@ -41,22 +42,22 @@ export function HeroSection({
       </div>
 
       <div className="flex flex-wrap items-center justify-center gap-3 mb-12">
-        <button
-          onClick={onExploreClick}
+        <Link
+          href="/explore"
           className="px-5 py-2.5 rounded-lg bg-brand-primary text-black font-semibold text-sm hover:bg-brand-hover transition-all flex items-center gap-2 shadow-sm active:scale-95"
         >
           Explore Active Bounties
           <ArrowDownRight className="w-4 h-4" />
-        </button>
+        </Link>
 
         {authenticated ? (
-          <button
-            onClick={onCreateBountyClick}
+          <Link
+            href="/dashboard"
             className="px-5 py-2.5 rounded-lg border border-surface-border bg-surface-secondary text-content-primary font-semibold text-sm hover:border-brand-primary/50 transition-all flex items-center gap-2 active:scale-95"
           >
             <PlusCircle className="w-4 h-4 text-brand-primary" />
             Create Bounty
-          </button>
+          </Link>
         ) : (
           <button
             onClick={login}
