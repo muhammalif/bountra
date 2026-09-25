@@ -190,17 +190,22 @@ Related: [[_MOC/Index|Knowledge Map]] · [[Projects/BNB Hackathon 2026 - Project
 * [x] **H3.2:** Hero Section (Magic UI Animated Beam: GitHub PR $\rightarrow$ Gemini AI $\rightarrow$ BNB Escrow, Anti-Slop Dials ENERGY 2 / RHYTHM 2 / MOTION 2).
 * [x] **H3.3:** Live Audit Terminal Viewer (Real-time evaluation log streaming, 5-layer pipeline tracker, 3-scenario interactive simulator).
 * [x] **H3.4A:** Bounty Explorer Page (`/explore`) — Katalog Grid Bounty, Search, Filter Tabs, dan integrasi `CreateBountyModal` on-chain deposit.
-* [ ] **H3.4B:** User Dashboard (`/dashboard`) — Portal Sponsor Escrow Manager (refund expired), Developer Claims history, dan slide-over `ClaimBountyDrawer`.
-* [ ] **H3.4C:** Multi-Page Navigation & Landing Integration — Header/Navbar routing (`/`, `/explore`, `/dashboard`), Hero CTA routing, dan landing page teaser grid.
+* [x] **H3.4B:** User Dashboard (`/dashboard`) — Portal Sponsor Escrow Manager (refund expired), Developer Claims history, dan slide-over `ClaimBountyDrawer`.
+* [x] **H3.4C:** Multi-Page Navigation & Landing Integration — Header/Navbar routing (`/`, `/explore`, `/dashboard`), Hero CTA routing, dan landing page teaser grid.
 * [ ] **H3.5:** End-to-End Demo Recording & Pitch Submission.
 
 ---
 
 ## 8. Status Progress
 
-* **Status Proyek:** 🟡 `in-progress` (Sprint H1, H2, H3.1, H3.2, H3.3 Selesai)
-* **Current Phase:** Sprint H3 Frontend Multi-Page Architecture (Menuju H3.4A Bounty Explorer Page).
-* **Next Immediate Action:** Implementasi H3.4A Bounty Explorer Page (`/explore`) dengan Grid, Filter, dan CreateBountyModal.
+* **Status Proyek:** 🟢 `in-progress` (Sprint H0, H1, H2, H3.1, H3.2, H3.3, H3.4A, H3.4B, H3.4C Selesai, Menuju H3.5)
+* **Deployed Smart Contract:**
+  * **Network:** BSC Testnet (Chain ID `97`)
+  * **Contract Address:** `0xbe576879961Bd8cdf7CfA72F146C8a3E352c7260`
+  * **Agent Signer:** `0x2e10F4a41F665c657Ff4deC4A780e8734A066848`
+  * **Explorer:** [BscScan Testnet](https://testnet.bscscan.com/address/0xbe576879961Bd8cdf7CfA72F146C8a3E352c7260)
+* **Agent Backend Engine:** Fastify REST API + Viem Signer + Gemini 2.0 Flash + Drizzle SQLite (16/16 tests PASS).
+* **Next Immediate Action:** Menjalankan Task H3.5 (End-to-End Demo Recording & Pitch Submission).
 
 ---
 
