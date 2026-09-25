@@ -18,7 +18,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Bountra — Autonomous GitHub PR Auditor & Escrow",
   description: "Commit your code, get paid by AI in seconds — zero human review delay on BNB Chain.",
-  keywords: ["BNB Chain", "AI Agent", "GitHub Bounty", "Escrow", "Gemini 2.0 Flash", "Web3", "Foundry"]
+  keywords: ["BNB Chain", "AI Agent", "GitHub Bounty", "Escrow", "Bountra Agent", "Web3", "Foundry"]
 };
 
 export default function RootLayout({

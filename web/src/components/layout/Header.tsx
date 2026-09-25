@@ -31,9 +31,6 @@ export function Header() {
             </div>
             <div className="flex items-center gap-2">
               <span className="font-bold text-lg tracking-tight text-content-primary">BOUNTRA</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface-tertiary border border-surface-border text-brand-primary font-mono">
-                BSC Testnet
-              </span>
             </div>
           </Link>
 

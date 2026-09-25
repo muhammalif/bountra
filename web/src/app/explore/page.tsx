@@ -68,7 +68,7 @@ export default function ExplorePage() {
               Explore Active Bounties
             </h1>
             <p className="mt-2 text-sm text-content-secondary max-w-2xl leading-relaxed">
-              Find open GitHub issues with funds locked on BNB Chain. Submit high-quality PRs, pass 5-layer Gemini 2.0 Flash automated security review, and claim rewards instantly.
+              Find open GitHub issues with funds locked on BNB Chain. Submit high-quality PRs, pass 5-layer Bountra Agent automated security review, and claim rewards instantly.
             </p>
           </div>
 

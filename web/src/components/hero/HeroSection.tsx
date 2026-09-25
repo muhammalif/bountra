@@ -37,7 +37,7 @@ export function HeroSection({
           </span>
         </h1>
         <p className="text-base sm:text-lg text-content-secondary max-w-2xl mx-auto leading-relaxed">
-          Lock bounty rewards on BNB Chain. When developers submit PRs, Gemini 2.0 Flash audits diffs, verifies CI checks, and signs ECDSA payouts in seconds. Zero human review delay.
+          Lock bounty rewards on BNB Chain. When developers submit PRs, Bountra Agent audits diffs, verifies CI checks, and signs ECDSA payouts in seconds. Zero human review delay.
         </p>
       </div>
 
@@ -103,7 +103,7 @@ export function HeroSection({
             &lt; 15s Avg
           </div>
           <span className="text-xs text-content-secondary">
-            Gemini 2.0 Flash Fast Review
+            Bountra Agent Fast Review
           </span>
         </div>
 

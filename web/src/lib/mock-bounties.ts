@@ -48,7 +48,7 @@ export const INITIAL_BOUNTIES: BountyItem[] = [
     issueUrl: "https://github.com/bountra/agent-evaluator/issues/19",
     repo: "bountra/agent-evaluator",
     issueNumber: 19,
-    title: "Optimize Gemini 2.0 Flash AST parser regex for Solidity custom errors",
+    title: "Optimize Bountra Agent AST parser regex for Solidity custom errors",
     description: "Parse Solidity 0.8.28 Custom Error definitions inside PR diffs to ensure anti-tampering rules correctly flag error signature modifications.",
     tags: ["AI Agent", "AST", "Fastify"],
     deadline: Math.floor(Date.now() / 1000) - 86400 * 2,

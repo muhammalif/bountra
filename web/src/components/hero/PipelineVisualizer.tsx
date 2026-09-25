@@ -57,7 +57,7 @@ export function PipelineVisualizer() {
           </Circle>
         </div>
         <div className="text-center">
-          <span className="block font-mono text-xs font-semibold text-brand-primary">Gemini 2.0 Flash</span>
+          <span className="block font-mono text-xs font-semibold text-brand-primary">Bountra Agent</span>
           <span className="block font-mono text-[10px] text-content-secondary">5-Layer Gates + ECDSA</span>
         </div>
       </div>

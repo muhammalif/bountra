@@ -78,8 +78,8 @@ export const AUDIT_SCENARIOS: AuditScenario[] = [
       },
       {
         timestamp: "00:03.450",
-        tag: "GEMINI_EVAL",
-        message: "Initiating Gemini 2.0 Flash audit in sandboxed XML context with strict JSON schema..."
+        tag: "AGENT_EVAL",
+        message: "Initiating Bountra Agent audit in sandboxed XML context with strict JSON schema..."
       },
       {
         timestamp: "00:05.120",
@@ -234,7 +234,7 @@ export const AUDIT_SCENARIOS: AuditScenario[] = [
       {
         timestamp: "00:04.150",
         tag: "ERROR",
-        message: "Adversarial prompt injection neutralized. Gemini 2.0 Flash returned REJECT verdict. No signature generated."
+        message: "Adversarial prompt injection neutralized. Bountra Agent returned REJECT verdict. No signature generated."
       }
     ],
     verdictJson: {

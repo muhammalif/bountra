@@ -14,7 +14,7 @@ const STAGES = [
   { id: 1, name: "HMAC Ingest", shortDesc: "Webhook Validation" },
   { id: 2, name: "CI Hard Gate", shortDesc: "Test Suite Passing" },
   { id: 3, name: "Anti-Tamper", shortDesc: "Protected Diff Check" },
-  { id: 4, name: "Gemini 2.0 Audit", shortDesc: "AST Security Analysis" },
+  { id: 4, name: "Bountra Agent Audit", shortDesc: "AST Security Analysis" },
   { id: 5, name: "ECDSA Signer", shortDesc: "On-Chain Payload Sign" }
 ];
 
