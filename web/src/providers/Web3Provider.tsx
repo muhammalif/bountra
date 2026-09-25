@@ -11,28 +11,30 @@ interface Web3ProviderProps {
   children: ReactNode;
 }
 
-const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID || "cl00000000000000000000000";
+const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID || "cmugrtffe02sw0di7hao4m2u1";
 
 export function Web3Provider({ children }: Web3ProviderProps) {
-  const [queryClient] = useState(() => new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: 5000,
-        refetchOnWindowFocus: false
-      }
-    }
-  }));
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 5000,
+            refetchOnWindowFocus: false
+          }
+        }
+      })
+  );
 
   return (
     <PrivyProvider
       appId={PRIVY_APP_ID}
       config={{
-        loginMethods: ["github", "wallet", "email"],
+        loginMethods: ["wallet", "email", "github"],
         appearance: {
           theme: "dark",
           accentColor: "#F0B90B",
-          logo: "/logo.png",
-          showWalletLoginFirst: false
+          showWalletLoginFirst: true
         },
         defaultChain: bscTestnet,
         supportedChains: [bscTestnet, opBNBTestnet],
@@ -44,9 +46,7 @@ export function Web3Provider({ children }: Web3ProviderProps) {
       }}
     >
       <QueryClientProvider client={queryClient}>
-        <WagmiProvider config={wagmiConfig}>
-          {children}
-        </WagmiProvider>
+        <WagmiProvider config={wagmiConfig}>{children}</WagmiProvider>
       </QueryClientProvider>
     </PrivyProvider>
   );

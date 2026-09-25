@@ -19,7 +19,7 @@ export function HeroSection({
   onCreateBountyClick,
   bountyCount = 0
 }: HeroSectionProps) {
-  const { authenticated, login } = usePrivy();
+  const { ready, authenticated, login } = usePrivy();
 
   return (
     <section className="relative flex flex-col items-center justify-center pt-8 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
@@ -60,11 +60,13 @@ export function HeroSection({
           </Link>
         ) : (
           <button
-            onClick={login}
-            className="px-5 py-2.5 rounded-lg border border-surface-border bg-surface-secondary text-content-primary font-semibold text-sm hover:border-brand-primary/50 transition-all flex items-center gap-2 active:scale-95"
+            type="button"
+            onClick={() => login()}
+            disabled={!ready}
+            className="px-5 py-2.5 rounded-lg border border-surface-border bg-surface-secondary text-content-primary font-semibold text-sm hover:border-brand-primary/50 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
           >
             <PlusCircle className="w-4 h-4 text-brand-primary" />
-            Sign In with GitHub to Create
+            <span>{ready ? "Sign In with GitHub to Create" : "Connecting..."}</span>
           </button>
         )}
       </div>

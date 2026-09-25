@@ -103,11 +103,16 @@ export function Header() {
             </div>
           ) : (
             <button
-              onClick={login}
-              className="px-4 py-2 rounded-lg bg-brand-primary text-black font-semibold text-sm hover:bg-brand-hover flex items-center gap-2 transition-all shadow-sm active:scale-95"
+              type="button"
+              onClick={() => login()}
+              disabled={!ready}
+              className={cn(
+                "px-4 py-2 rounded-lg bg-brand-primary text-black font-semibold text-sm hover:bg-brand-hover flex items-center gap-2 transition-all shadow-sm active:scale-95",
+                !ready && "opacity-70 cursor-not-allowed"
+              )}
             >
               <LogIn className="w-4 h-4" />
-              <span>Connect / GitHub</span>
+              <span>{ready ? "Connect / GitHub" : "Connecting..."}</span>
             </button>
           )}
         </div>

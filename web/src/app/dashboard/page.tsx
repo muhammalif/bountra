@@ -16,7 +16,7 @@ import { LogIn, ShieldAlert, ArrowRight, Sparkles } from "lucide-react";
 
 export default function DashboardPage() {
   const { isConnected, address } = useAccount();
-  const { authenticated, login } = usePrivy();
+  const { ready, authenticated, login } = usePrivy();
   const [activeTab, setActiveTab] = useState<"sponsor" | "developer">("sponsor");
   const [bounties, setBounties] = useState<BountyItem[]>(INITIAL_BOUNTIES);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -47,10 +47,12 @@ export default function DashboardPage() {
               Sign in with your GitHub account or Web3 wallet to manage escrow deposits, review verified code PRs, and process on-chain developer payouts.
             </p>
             <button
-              onClick={login}
-              className="px-6 py-3 rounded-lg bg-brand-primary text-black font-semibold text-xs sm:text-sm hover:bg-brand-hover transition-colors flex items-center gap-2 shadow-sm"
+              type="button"
+              onClick={() => login()}
+              disabled={!ready}
+              className="px-6 py-3 rounded-lg bg-brand-primary text-black font-semibold text-xs sm:text-sm hover:bg-brand-hover transition-colors flex items-center gap-2 shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              <span>Connect Wallet / Sign In with GitHub</span>
+              <span>{ready ? "Connect Wallet / Sign In with GitHub" : "Connecting..."}</span>
               <ArrowRight className="h-4 w-4" />
             </button>
           </div>
