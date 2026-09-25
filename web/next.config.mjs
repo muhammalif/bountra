@@ -7,6 +7,9 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true
   },
+  experimental: {
+    optimizePackageImports: ["lucide-react", "framer-motion", "@privy-io/react-auth", "viem"]
+  },
   env: {
     NEXT_PUBLIC_PRIVY_APP_ID: "cmugrtffe02sw0di7hao4m2u1",
     NEXT_PUBLIC_ESCROW_CONTRACT_ADDRESS: "0xbe576879961Bd8cdf7CfA72F146C8a3E352c7260",
