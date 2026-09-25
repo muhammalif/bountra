@@ -192,20 +192,21 @@ Related: [[_MOC/Index|Knowledge Map]] · [[Projects/BNB Hackathon 2026 - Project
 * [x] **H3.4A:** Bounty Explorer Page (`/explore`) — Katalog Grid Bounty, Search, Filter Tabs, dan integrasi `CreateBountyModal` on-chain deposit.
 * [x] **H3.4B:** User Dashboard (`/dashboard`) — Portal Sponsor Escrow Manager (refund expired), Developer Claims history, dan slide-over `ClaimBountyDrawer`.
 * [x] **H3.4C:** Multi-Page Navigation & Landing Integration — Header/Navbar routing (`/`, `/explore`, `/dashboard`), Hero CTA routing, dan landing page teaser grid.
-* [ ] **H3.5:** End-to-End Demo Recording & Pitch Submission.
+* [x] **H3.5:** End-to-End Demo Recording & Pitch Submission — Master README, Demo Video Walkthrough Script (`docs/DEMO_SCRIPT.md`), dan Submission Pitch Kit (`docs/PITCH.md`).
 
 ---
 
 ## 8. Status Progress
 
-* **Status Proyek:** 🟢 `in-progress` (Sprint H0, H1, H2, H3.1, H3.2, H3.3, H3.4A, H3.4B, H3.4C Selesai, Menuju H3.5)
+* **Status Proyek:** 🟢 `completed` (Seluruh Sprint H0, H1, H2, H3.1–H3.5 Selesai 100%)
 * **Deployed Smart Contract:**
   * **Network:** BSC Testnet (Chain ID `97`)
   * **Contract Address:** `0xbe576879961Bd8cdf7CfA72F146C8a3E352c7260`
   * **Agent Signer:** `0x2e10F4a41F665c657Ff4deC4A780e8734A066848`
   * **Explorer:** [BscScan Testnet](https://testnet.bscscan.com/address/0xbe576879961Bd8cdf7CfA72F146C8a3E352c7260)
 * **Agent Backend Engine:** Fastify REST API + Viem Signer + Gemini 2.0 Flash + Drizzle SQLite (16/16 tests PASS).
-* **Next Immediate Action:** Menjalankan Task H3.5 (End-to-End Demo Recording & Pitch Submission).
+* **Frontend Multi-Page dApp:** Next.js 14 App Router (`/`, `/explore`, `/dashboard`) + Privy Auth & Embedded Wallet + Wagmi v2.
+* **Submission Materials:** `README.md`, `docs/DEMO_SCRIPT.md`, `docs/PITCH.md`.
 
 ---
 

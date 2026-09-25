@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  outputFileTracing: false,
   typescript: {
     ignoreBuildErrors: true
   },
@@ -9,14 +10,6 @@ const nextConfig = {
   },
   webpack: (config) => {
     config.externals.push("pino-pretty", "lokijs", "encoding");
-    config.resolve.fallback = {
-      ...config.resolve.fallback,
-      fs: false,
-      net: false,
-      tls: false,
-      crypto: false
-    };
-
     config.resolve.alias = {
       ...config.resolve.alias,
       "@coinbase/cdp-sdk": false,
@@ -25,7 +18,6 @@ const nextConfig = {
       "@farcaster/mini-app-solana": false,
       "@abstract-foundation/agw-client": false
     };
-
     return config;
   }
 };
