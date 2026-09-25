@@ -5,17 +5,21 @@ export const BOUNTRA_ESCROW_ADDRESS = (process.env.NEXT_PUBLIC_ESCROW_CONTRACT_A
 
 export const DEFAULT_CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID || 97);
 
+export const MOCK_USDT_ADDRESS = (process.env.NEXT_PUBLIC_MOCK_USDT_ADDRESS ||
+  "0x337610d27c682E347C9cD60BE4b3b107C9d34dDd") as Address; // BSC Testnet USDT
+
 export const BOUNTRA_ESCROW_ABI = parseAbi([
-  "event BountyCreated(uint256 indexed bountyId, address indexed creator, address indexed token, uint256 amount, string issueUrl, uint256 deadline)",
-  "event BountyClaimed(uint256 indexed bountyId, address indexed developer, string commitHash, string prUrl, uint256 amount)",
-  "event BountyCancelled(uint256 indexed bountyId, address indexed creator, uint256 amount)",
-  "function createBounty(address token, uint256 amount, string calldata issueUrl, uint256 deadline) external returns (uint256)",
-  "function claimBounty(uint256 bountyId, address devWallet, string calldata commitHash, string calldata prUrl, bytes calldata signature) external",
+  "event BountyCreated(uint256 indexed bountyId, address indexed creator, address token, uint256 amount, string issueUrl, uint256 deadline)",
+  "event BountyClaimed(uint256 indexed bountyId, address indexed developer, string prUrl, string commitHash)",
+  "event BountyCancelled(uint256 indexed bountyId, address indexed creator)",
+  "function createBounty(string calldata issueUrl, address token, uint256 amount, uint256 deadline) external returns (uint256 bountyId)",
+  "function claimBounty(uint256 bountyId, address devWallet, string calldata prUrl, string calldata commitHash, bytes calldata signature) external",
   "function cancelBounty(uint256 bountyId) external",
-  "function getBounty(uint256 bountyId) external view returns (address creator, bool claimed, bool cancelled, address token, uint256 amount, uint256 deadline, string memory issueUrl)",
+  "function getBounty(uint256 bountyId) external view returns ((address creator, address token, uint256 amount, string issueUrl, uint256 deadline, bool claimed, bool cancelled))",
   "function bountyCount() external view returns (uint256)",
   "function agentSigner() external view returns (address)",
-  "function usedSignatures(bytes32 digest) external view returns (bool)"
+  "function usedSignatures(bytes32 digest) external view returns (bool)",
+  "function getMessageHash(uint256 bountyId, address devWallet, string calldata commitHash, string calldata prUrl) external view returns (bytes32)"
 ]);
 
 export const ERC20_ABI = parseAbi([
@@ -23,5 +27,6 @@ export const ERC20_ABI = parseAbi([
   "function allowance(address owner, address spender) external view returns (uint256)",
   "function balanceOf(address account) external view returns (uint256)",
   "function decimals() external view returns (uint8)",
-  "function symbol() external view returns (string)"
+  "function symbol() external view returns (string)",
+  "function transfer(address to, uint256 amount) external returns (bool)"
 ]);
