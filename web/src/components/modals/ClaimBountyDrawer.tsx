@@ -307,7 +307,7 @@ export function ClaimBountyDrawer({
           { label: "2. Test Immutability", passed: false, note: "VIOLATION: modified test/Escrow.t.sol" },
           { label: "3. Prompt Injection Scan", passed: true, note: "Clean, no malicious comments" },
           { label: "4. Static Analysis (AST)", passed: false, note: "Reentrancy without nonReentrant guard" },
-          { label: "5. Gemini AI Evaluation", passed: false, note: "Verdict: REJECT (Score 32/100)" },
+          { label: "5. Bountra Agent Evaluation", passed: false, note: "Verdict: REJECT (Score 32/100)" },
         ].map((layer, idx) => (
           <div key={idx} className="flex items-center justify-between p-2.5 rounded-lg border border-surface-border bg-surface-primary">
             <span className="font-mono text-xs text-content-primary">{layer.label}</span>
