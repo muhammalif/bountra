@@ -23,18 +23,24 @@ export default function ExplorePage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedBountyForClaim, setSelectedBountyForClaim] = useState<BountyItem | null>(null);
 
-  // Merge on-chain bounties with mock data (avoid duplicate IDs)
+  // Merge on-chain bounties with mock data:
+  // On-chain bounties appear first with unique IDs, followed by mock bounties with offset IDs
   useEffect(() => {
     if (onChainBounties.length === 0) return;
-    const mockIds = new Set(INITIAL_BOUNTIES.map((b) => b.id));
-    // Offset on-chain IDs to avoid collision with mock IDs
-    const merged = [
-      ...INITIAL_BOUNTIES,
-      ...onChainBounties
-        .filter((b) => !mockIds.has(b.id))
-        .map((b) => ({ ...b, id: b.id + 1000 })),
-    ];
-    setBounties(merged);
+
+    // Use on-chain bounties as primary entries
+    const formattedOnChain = onChainBounties.map((b) => ({
+      ...b,
+      id: b.id, // 0, 1, 2, 3...
+    }));
+
+    // Offset mock bounty IDs by 100 to ensure completely unique keys
+    const formattedMock = INITIAL_BOUNTIES.map((b) => ({
+      ...b,
+      id: b.id + 100,
+    }));
+
+    setBounties([...formattedOnChain, ...formattedMock]);
   }, [onChainBounties]);
 
   const filteredBounties = useMemo(() => {
@@ -195,6 +201,7 @@ export default function ExplorePage() {
         onClose={() => setSelectedBountyForClaim(null)}
         onSuccess={() => {
           setSelectedBountyForClaim(null);
+          refetchOnChain();
         }}
       />
 

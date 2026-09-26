@@ -375,14 +375,16 @@ export function ClaimBountyDrawer({
             </button>
           </div>
 
-          <button
-            type="button"
-            onClick={handleAutofillDemoProof}
-            className="w-full flex items-center justify-center gap-2 rounded-lg border border-brand-primary/40 bg-brand-primary/10 px-3 py-2 text-xs font-mono text-brand-primary hover:bg-brand-primary/20 transition-colors"
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            <span>Autofill Proof from Live Audit Terminal</span>
-          </button>
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={handleAutofillDemoProof}
+              className="text-[10px] font-mono text-brand-primary hover:underline hover:text-brand-hover inline-flex items-center gap-1"
+            >
+              <Zap className="h-3 w-3" />
+              <span>Demo: Autofill test signature</span>
+            </button>
+          </div>
 
           <div>
             <label className="block text-xs font-mono font-medium text-content-secondary mb-1">
