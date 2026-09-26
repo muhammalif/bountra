@@ -16,39 +16,43 @@ import { BountyItem } from "@/types/bounty";
 import { LogIn, ArrowRight } from "lucide-react";
 
 export default function DashboardPage() {
-  const { isConnected, address } = useAccount();
-  const { ready, authenticated, login } = usePrivy();
+  const { isConnected, address: wagmiAddress } = useAccount();
+  const { ready, authenticated, login, user } = usePrivy();
+  const address = wagmiAddress || (user?.wallet?.address as `0x${string}` | undefined);
   const { onChainBounties, refetch: refetchOnChain } = useOnChainBounties();
   const [activeTab, setActiveTab] = useState<"sponsor" | "developer">("sponsor");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedBountyForClaim, setSelectedBountyForClaim] = useState<BountyItem | null>(null);
 
-  // Sponsor Hub: show on-chain bounties created by connected wallet
-  // + mock bounties matching connected wallet (fallback for demo)
+  // Sponsor Hub: show all bounties created by connected wallet
+  // If no wallet connected, show empty; if connected, show on-chain + mock (if match)
   const sponsorBounties = useMemo(() => {
     if (!address) return [];
     const addr = address.toLowerCase();
 
-    // On-chain bounties owned by this wallet
+    // 1. On-chain bounties owned by this user
     const onChain = onChainBounties.filter(
       (b) => b.creator.toLowerCase() === addr
     );
 
-    // Mock bounties that match (for demo richness, optional)
+    // 2. If on-chain list is loaded and has items, prioritize them
+    if (onChain.length > 0) {
+      return onChain;
+    }
+
+    // 3. Fallback: If onChain is empty or user is testing with mock address
     const mock = INITIAL_BOUNTIES.filter(
       (b) => b.creator.toLowerCase() === addr
     );
-
-    // Combine, on-chain first
-    return [...onChain, ...mock];
+    return mock;
   }, [address, onChainBounties]);
 
-  // Developer Hub: mock claims for demo representation
+  // Developer Hub claims for demo
   const devClaims = useMemo(() => {
     return INITIAL_BOUNTIES.slice(0, 3);
   }, []);
 
-  const isUserLoggedIn = isConnected || authenticated;
+  const isUserLoggedIn = Boolean(isConnected || authenticated);
 
   return (
     <div className="min-h-screen bg-surface-primary text-content-primary flex flex-col font-sans selection:bg-brand-primary/20 selection:text-brand-primary">

@@ -20,6 +20,7 @@ export function CreateBountyModal({ isOpen, onClose, onSuccess }: CreateBountyMo
   const { user, authenticated } = usePrivy();
   const address = wagmiAddress || (user?.wallet?.address as `0x${string}` | undefined);
   const isWalletActive = Boolean(isConnected || authenticated);
+
   const [issueUrl, setIssueUrl] = useState("");
   const [amount, setAmount] = useState("100");
   const [durationDays, setDurationDays] = useState("14");
@@ -37,7 +38,7 @@ export function CreateBountyModal({ isOpen, onClose, onSuccess }: CreateBountyMo
     }
   });
 
-  const needsApproval = allowance !== undefined && allowance < amountParsed;
+  const needsApproval = allowance === undefined || allowance < amountParsed;
 
   const {
     writeContract: writeApprove,
@@ -50,20 +51,6 @@ export function CreateBountyModal({ isOpen, onClose, onSuccess }: CreateBountyMo
     hash: approveTxHash
   });
 
-  useEffect(() => {
-    if (isOpen) {
-      setErrorMsg(null);
-      resetApprove();
-      resetCreate();
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (isApproveSuccess) {
-      refetchAllowance();
-    }
-  }, [isApproveSuccess, refetchAllowance]);
-
   const {
     writeContract: writeCreateBounty,
     data: createTxHash,
@@ -75,6 +62,26 @@ export function CreateBountyModal({ isOpen, onClose, onSuccess }: CreateBountyMo
     hash: createTxHash
   });
 
+  // Reset form whenever modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setErrorMsg(null);
+      resetApprove();
+      resetCreate();
+      if (address) {
+        refetchAllowance();
+      }
+    }
+  }, [isOpen, address, refetchAllowance, resetApprove, resetCreate]);
+
+  // When approve succeeds, refetch allowance so button flips to Step 2
+  useEffect(() => {
+    if (isApproveSuccess) {
+      refetchAllowance();
+    }
+  }, [isApproveSuccess, refetchAllowance]);
+
+  // When create succeeds, trigger parent callback
   useEffect(() => {
     if (isCreateSuccess && onSuccess) {
       onSuccess();
@@ -109,7 +116,7 @@ export function CreateBountyModal({ isOpen, onClose, onSuccess }: CreateBountyMo
 
   const handleCreate = () => {
     setErrorMsg(null);
-    if (!issueUrl.startsWith("https://github.com/")) {
+    if (!issueUrl.trim().startsWith("https://github.com/")) {
       setErrorMsg("Please enter a valid GitHub issue URL (e.g. https://github.com/owner/repo/issues/12)");
       return;
     }
@@ -183,7 +190,7 @@ export function CreateBountyModal({ isOpen, onClose, onSuccess }: CreateBountyMo
               onClick={resetAll}
               className="w-full rounded-lg bg-brand-primary text-black font-semibold text-xs py-2.5 hover:bg-brand-hover transition-colors"
             >
-              Done & Return to Explorer
+              Done & Return to Workspace
             </button>
           </div>
         ) : (
@@ -274,6 +281,7 @@ export function CreateBountyModal({ isOpen, onClose, onSuccess }: CreateBountyMo
             <div className="pt-2 flex flex-col gap-2">
               {needsApproval ? (
                 <button
+                  type="button"
                   onClick={handleApprove}
                   disabled={!isWalletActive || isApprovePending || isApproveConfirming}
                   className="w-full flex items-center justify-center gap-2 rounded-lg bg-brand-primary text-black font-semibold text-xs py-2.5 hover:bg-brand-hover transition-colors disabled:opacity-50"
@@ -289,6 +297,7 @@ export function CreateBountyModal({ isOpen, onClose, onSuccess }: CreateBountyMo
                 </button>
               ) : (
                 <button
+                  type="button"
                   onClick={handleCreate}
                   disabled={!isWalletActive || isCreatePending || isCreateConfirming}
                   className="w-full flex items-center justify-center gap-2 rounded-lg bg-brand-primary text-black font-semibold text-xs py-2.5 hover:bg-brand-hover transition-colors disabled:opacity-50"

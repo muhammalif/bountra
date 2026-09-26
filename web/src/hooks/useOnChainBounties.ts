@@ -4,7 +4,14 @@ import { useEffect, useState, useCallback } from "react";
 import { usePublicClient } from "wagmi";
 import { BOUNTRA_ESCROW_ADDRESS, BOUNTRA_ESCROW_ABI } from "@/config/contracts";
 import { BountyItem } from "@/types/bounty";
-import { formatUnits } from "viem";
+import { formatUnits, createPublicClient, http } from "viem";
+import { bscTestnet } from "viem/chains";
+
+// Dedicated standalone fallback client in case Wagmi publicClient is unmounted or in transition
+const standaloneClient = createPublicClient({
+  chain: bscTestnet,
+  transport: http("https://data-seed-prebsc-1-s1.bnbchain.org:8545"),
+});
 
 /**
  * Reads all bounties from the BountraEscrow smart contract on BSC Testnet.
@@ -12,20 +19,19 @@ import { formatUnits } from "viem";
  * Also exposes a `refetch` function so UI can refresh after createBounty/cancelBounty.
  */
 export function useOnChainBounties() {
-  const publicClient = usePublicClient();
+  const wagmiPublicClient = usePublicClient();
   const [onChainBounties, setOnChainBounties] = useState<BountyItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchBounties = useCallback(async () => {
-    if (!publicClient) return;
-
+    const client = wagmiPublicClient || standaloneClient;
     let cancelled = false;
     setIsLoading(true);
     setError(null);
 
     try {
-      const count = await publicClient!.readContract({
+      const count = await client.readContract({
         address: BOUNTRA_ESCROW_ADDRESS,
         abi: BOUNTRA_ESCROW_ABI,
         functionName: "bountyCount",
@@ -44,7 +50,7 @@ export function useOnChainBounties() {
 
       for (let i = 0; i < total; i++) {
         try {
-          const data = await publicClient!.readContract({
+          const data = await client.readContract({
             address: BOUNTRA_ESCROW_ADDRESS,
             abi: BOUNTRA_ESCROW_ABI,
             functionName: "getBounty",
@@ -66,8 +72,8 @@ export function useOnChainBounties() {
           if (data.claimed) status = "claimed";
           else if (data.cancelled) status = "cancelled";
 
-          let repo = "unknown/repo";
-          let issueNumber = i;
+          let repo = "bountra/core-contracts";
+          let issueNumber = i + 1;
           const ghMatch = data.issueUrl.match(
             /github\.com\/([^/]+\/[^/]+)\/issues\/(\d+)/
           );
@@ -86,17 +92,17 @@ export function useOnChainBounties() {
             issueUrl: data.issueUrl,
             repo,
             issueNumber,
-            title: `On-Chain Bounty #${i}`,
-            description: `Bounty funded with ${amountNum.toFixed(0)} USDT — locked in BountraEscrow smart contract on BSC Testnet.`,
-            tags: ["On-Chain", "BSC Testnet"],
+            title: `Escrow Milestone Task #${i + 1}`,
+            description: `On-chain bounty funded with ${amountNum.toFixed(0)} USDT. Automated code audit via Bountra Agent on BSC Testnet.`,
+            tags: ["On-Chain", "Smart Contract", "BSC Testnet"],
             deadline: Number(data.deadline),
             claimed: data.claimed,
             cancelled: data.cancelled,
             status,
             isOnChain: true,
           } as BountyItem);
-        } catch {
-          // skip individual bounty read error
+        } catch (err: any) {
+          console.error(`Error reading bounty #${i}:`, err);
         }
       }
 
@@ -112,12 +118,11 @@ export function useOnChainBounties() {
         setIsLoading(false);
       }
     }
-  }, [publicClient]);
+  }, [wagmiPublicClient]);
 
   useEffect(() => {
     fetchBounties();
-    // Re-fetch every 30s to pick up on-chain state changes
-    const interval = setInterval(fetchBounties, 30_000);
+    const interval = setInterval(fetchBounties, 15_000);
     return () => clearInterval(interval);
   }, [fetchBounties]);
 
