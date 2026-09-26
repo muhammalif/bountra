@@ -27,7 +27,8 @@ export function BountyFilter({
     { id: "all", label: "All Bounties" },
     { id: "open", label: "Open for PR" },
     { id: "in_review", label: "In Review" },
-    { id: "claimed", label: "Claimed" }
+    { id: "claimed", label: "Claimed" },
+    { id: "rejected", label: "Rejected" }
   ];
 
   return (

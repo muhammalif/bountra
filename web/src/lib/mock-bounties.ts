@@ -91,5 +91,23 @@ export const INITIAL_BOUNTIES: BountyItem[] = [
     claimed: false,
     cancelled: false,
     status: "open"
+  },
+  {
+    id: 5,
+    creator: "0x3a9B123c52A9D490b8B0F2849eF3e5Dcb76A889",
+    token: MOCK_USDT_ADDRESS,
+    tokenSymbol: "USDT",
+    amount: "450000000000000000000",
+    amountFormatted: "450",
+    issueUrl: "https://github.com/bountra/core-contracts/issues/29",
+    repo: "bountra/core-contracts",
+    issueNumber: 29,
+    title: "Implement flash loan arbitrage hook with callback verification",
+    description: "PR #31 was submitted for this issue but REJECTED by Bountra Agent. The submission modified test files to bypass assertions and introduced an unchecked reentrancy vulnerability.",
+    tags: ["Security Audit", "Reentrancy", "Foundry"],
+    deadline: Math.floor(Date.now() / 1000) + 86400 * 5,
+    claimed: false,
+    cancelled: false,
+    status: "rejected"
   }
 ];

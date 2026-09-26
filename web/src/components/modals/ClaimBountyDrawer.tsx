@@ -181,6 +181,11 @@ export function ClaimBountyDrawer({
         className: "border-surface-border bg-surface-tertiary text-content-muted",
         icon: <CheckCircle2 className="h-3.5 w-3.5" />
       },
+      rejected: {
+        label: "Audit Rejected",
+        className: "border-status-danger/30 bg-red-950/40 text-status-danger",
+        icon: <AlertCircle className="h-3.5 w-3.5" />
+      },
       cancelled: {
         label: "Cancelled",
         className: "border-status-danger/30 bg-status-danger/10 text-status-danger",
@@ -272,6 +277,48 @@ export function ClaimBountyDrawer({
           <div key={idx} className="flex items-center gap-2 p-2.5 rounded-lg border border-surface-border bg-surface-primary">
             <ShieldCheck className="h-3.5 w-3.5 text-status-success shrink-0" />
             <span className="font-mono text-xs text-content-primary">{step}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // ─── Rejected: Audit Failure Report ───
+  const renderRejectedContent = () => (
+    <div className="space-y-4">
+      {renderBountyMeta()}
+
+      <div className="p-4 rounded-xl border border-status-danger/30 bg-red-950/20">
+        <div className="flex items-start gap-3">
+          <AlertCircle className="h-8 w-8 text-status-danger shrink-0" />
+          <div>
+            <h4 className="text-sm font-semibold text-status-danger mb-1">Autonomous Audit Verdict: REJECTED</h4>
+            <p className="text-xs text-content-secondary leading-relaxed">
+              Bountra Agent flagged this submission for critical security vulnerabilities and anti-tampering violations. No funds were released.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-2.5">
+        <h4 className="text-xs font-mono font-semibold text-content-primary uppercase">5-Layer Security Breakdown</h4>
+        {[
+          { label: "1. CI Status Gate", passed: true, note: "GitHub Actions passed" },
+          { label: "2. Test Immutability", passed: false, note: "VIOLATION: modified test/Escrow.t.sol" },
+          { label: "3. Prompt Injection Scan", passed: true, note: "Clean, no malicious comments" },
+          { label: "4. Static Analysis (AST)", passed: false, note: "Reentrancy without nonReentrant guard" },
+          { label: "5. Gemini AI Evaluation", passed: false, note: "Verdict: REJECT (Score 32/100)" },
+        ].map((layer, idx) => (
+          <div key={idx} className="flex items-center justify-between p-2.5 rounded-lg border border-surface-border bg-surface-primary">
+            <span className="font-mono text-xs text-content-primary">{layer.label}</span>
+            <span className={cn(
+              "font-mono text-[10px] font-semibold uppercase px-2 py-0.5 rounded",
+              layer.passed
+                ? "bg-emerald-950/50 text-status-success border border-status-success/30"
+                : "bg-red-950/50 text-status-danger border border-status-danger/30"
+            )}>
+              {layer.note}
+            </span>
           </div>
         ))}
       </div>
@@ -499,6 +546,8 @@ export function ClaimBountyDrawer({
               renderInReviewContent()
             ) : bounty.status === "claimed" ? (
               renderClaimedContent()
+            ) : bounty.status === "rejected" ? (
+              renderRejectedContent()
             ) : bounty.status === "cancelled" ? (
               renderCancelledContent()
             ) : (

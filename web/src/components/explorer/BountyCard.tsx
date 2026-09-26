@@ -28,6 +28,11 @@ export function BountyCard({ bounty, onSelect }: BountyCardProps) {
           label: "Claimed & Paid",
           className: "border-surface-border bg-surface-tertiary text-content-muted"
         };
+      case "rejected":
+        return {
+          label: "Audit Rejected",
+          className: "border-status-danger/30 bg-red-950/40 text-status-danger"
+        };
       case "cancelled":
         return {
           label: "Cancelled",
@@ -99,7 +104,17 @@ export function BountyCard({ bounty, onSelect }: BountyCardProps) {
             onClick={() => onSelect(bounty)}
             className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-surface-tertiary hover:bg-brand-primary hover:text-black text-content-primary px-3 py-2 text-xs font-semibold transition-colors"
           >
-            <span>{bounty.status === "claimed" ? "View Audit Proof" : bounty.status === "in_review" ? "View Audit Status" : bounty.status === "cancelled" ? "View Details" : "View Issue & Instructions"}</span>
+            <span>
+              {bounty.status === "claimed"
+                ? "View Audit Proof"
+                : bounty.status === "in_review"
+                ? "View Audit Status"
+                : bounty.status === "rejected"
+                ? "View Rejection Report"
+                : bounty.status === "cancelled"
+                ? "View Details"
+                : "View Issue & Instructions"}
+            </span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
 
