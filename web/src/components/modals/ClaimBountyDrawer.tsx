@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { usePrivy } from "@privy-io/react-auth";
-import { X, ExternalLink, ShieldCheck, CheckCircle2, Loader2, Sparkles, AlertCircle, Clock, Eye, GitPullRequest, ArrowRight } from "lucide-react";
+import { X, ExternalLink, ShieldCheck, CheckCircle2, Loader2, Sparkles, AlertCircle, Clock, Eye, GitPullRequest, ArrowRight, Zap } from "lucide-react";
 import { BountyItem } from "@/types/bounty";
 import { BOUNTRA_ESCROW_ADDRESS, BOUNTRA_ESCROW_ABI } from "@/config/contracts";
 import { AUDIT_SCENARIOS } from "@/components/terminal/audit-scenarios";
