@@ -6,7 +6,7 @@ export const BOUNTRA_ESCROW_ADDRESS = (process.env.NEXT_PUBLIC_ESCROW_CONTRACT_A
 export const DEFAULT_CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID || 97);
 
 export const MOCK_USDT_ADDRESS = (process.env.NEXT_PUBLIC_MOCK_USDT_ADDRESS ||
-  "0x337610d27c682E347C9cD60BE4b3b107C9d34dDd") as Address; // BSC Testnet USDT
+  "0x189C7cA448e89DaF1C2A1C9a4DB4D9Ec475441c1") as Address; // Bountra Mock USDT (Mintable)
 
 export const BOUNTRA_ESCROW_ABI = parseAbi([
   "event BountyCreated(uint256 indexed bountyId, address indexed creator, address token, uint256 amount, string issueUrl, uint256 deadline)",
