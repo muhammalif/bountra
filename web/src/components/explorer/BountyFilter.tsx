@@ -27,7 +27,7 @@ export function BountyFilter({
     { id: "all", label: "All Bounties" },
     { id: "open", label: "Open for PR" },
     { id: "in_review", label: "In Review" },
-    { id: "ready_to_claim", label: "Ready to Claim" },
+    { id: "ready_to_claim", label: "Audit Passed" },
     { id: "claimed", label: "Claimed" },
     { id: "rejected", label: "Rejected" }
   ];

@@ -185,7 +185,7 @@ export function ClaimBountyDrawer({
         icon: <Clock className="h-3.5 w-3.5" />
       },
       ready_to_claim: {
-        label: "Passed (Ready to Claim)",
+        label: "Audit Passed",
         className: "border-brand-primary/40 bg-brand-primary/10 text-brand-primary",
         icon: <Sparkles className="h-3.5 w-3.5" />
       },
@@ -213,6 +213,69 @@ export function ClaimBountyDrawer({
       </span>
     );
   };
+
+  // ─── Ready to Claim: Public view shows Passed Audit Verdict & Claimant Info ───
+  const renderReadyToClaimContent = () => (
+    <div className="space-y-4">
+      {renderBountyMeta()}
+
+      <div className="p-4 rounded-xl border border-brand-primary/30 bg-brand-primary/10">
+        <div className="flex items-start gap-3">
+          <Sparkles className="h-8 w-8 text-brand-primary shrink-0" />
+          <div>
+            <h4 className="text-sm font-semibold text-brand-primary mb-1">
+              Autonomous Audit Passed (Score: 96/100)
+            </h4>
+            <p className="text-xs text-content-secondary leading-relaxed">
+              Bountra Agent has completed all 5 security verification layers and generated cryptographic authorization. Awaiting on-chain settlement by the developer in their Developer Hub.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-surface-border bg-surface-primary p-3 space-y-2 font-mono text-xs">
+        <div className="flex justify-between text-content-muted">
+          <span>Authorized Developer:</span>
+          <span className="text-content-primary">{formatAddress("0xA116aBe137640B3C62Aa6b4Be08e79E07d664f13")}</span>
+        </div>
+        <div className="flex justify-between text-content-muted">
+          <span>Escrow Payout:</span>
+          <span className="text-brand-primary font-bold">{bounty.amountFormatted} {bounty.tokenSymbol}</span>
+        </div>
+        <div className="flex justify-between text-content-muted">
+          <span>Cryptographic Proof:</span>
+          <span className="text-status-success font-semibold">ECDSA Signature Ready</span>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <h4 className="text-xs font-mono font-semibold text-content-primary uppercase">Audit Verification Checklist</h4>
+        {[
+          "1. CI Status Gate — Passed",
+          "2. Test Immutability Check — Passed (Zero tampering)",
+          "3. Anti-Prompt Injection Scan — Clean",
+          "4. Static Analysis (AST) — Zero Critical Vulnerabilities",
+          "5. Bountra Agent Evaluation — Score 96/100 (Pass)",
+        ].map((step, idx) => (
+          <div key={idx} className="flex items-center gap-2 p-2 rounded-lg border border-surface-border bg-surface-primary">
+            <CheckCircle2 className="h-3.5 w-3.5 text-status-success shrink-0" />
+            <span className="font-mono text-xs text-content-primary">{step}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="p-3 rounded-lg border border-dashed border-surface-border bg-surface-primary/40 text-[11px] text-content-muted flex items-center justify-between">
+        <span>Are you the developer who submitted this PR?</span>
+        <a
+          href="/dashboard"
+          className="text-brand-primary font-mono font-semibold hover:underline inline-flex items-center gap-1"
+        >
+          <span>Claim in Developer Hub</span>
+          <ArrowRight className="h-3 w-3" />
+        </a>
+      </div>
+    </div>
+  );
 
   // ─── In Review: read-only audit progress view ───
   const renderInReviewContent = () => (
@@ -557,6 +620,8 @@ export function ClaimBountyDrawer({
               </div>
             ) : bounty.status === "in_review" ? (
               renderInReviewContent()
+            ) : bounty.status === "ready_to_claim" ? (
+              renderReadyToClaimContent()
             ) : bounty.status === "claimed" ? (
               renderClaimedContent()
             ) : bounty.status === "rejected" ? (
@@ -568,8 +633,8 @@ export function ClaimBountyDrawer({
             )}
           </div>
 
-          {/* Action buttons — only for open/ready_to_claim status AND when showing claim form */}
-          {!isClaimSuccess && (bounty.status === "open" || bounty.status === "ready_to_claim") && showSubmitProof && (
+          {/* Action buttons — only for open status AND when showing claim form */}
+          {!isClaimSuccess && bounty.status === "open" && showSubmitProof && (
             <div className="pt-4 border-t border-surface-border flex flex-col gap-2">
               <button
                 onClick={handleClaim}
@@ -596,7 +661,7 @@ export function ClaimBountyDrawer({
           )}
 
           {/* Close button for other states */}
-          {!isClaimSuccess && (!["open", "ready_to_claim"].includes(bounty.status) || !showSubmitProof) && (
+          {!isClaimSuccess && (bounty.status !== "open" || !showSubmitProof) && (
             <div className="pt-4 border-t border-surface-border">
               <button
                 onClick={resetAll}

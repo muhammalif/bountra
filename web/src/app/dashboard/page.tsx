@@ -47,9 +47,11 @@ export default function DashboardPage() {
     return mock;
   }, [address, onChainBounties]);
 
-  // Developer Hub claims for demo
+  // Developer Hub claims for demo: show bounties that are claimed and ready_to_claim
   const devClaims = useMemo(() => {
-    return INITIAL_BOUNTIES.slice(0, 3);
+    return INITIAL_BOUNTIES.filter(
+      (b) => b.status === "claimed" || b.status === "ready_to_claim"
+    );
   }, []);
 
   const isUserLoggedIn = Boolean(isConnected || authenticated);
