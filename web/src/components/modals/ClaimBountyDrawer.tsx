@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { X, ExternalLink, ShieldCheck, CheckCircle2, Loader2, Sparkles, AlertCircle, Copy, Check } from "lucide-react";
+import { X, ExternalLink, ShieldCheck, CheckCircle2, Loader2, Sparkles, AlertCircle, Clock, Eye } from "lucide-react";
 import { BountyItem } from "@/types/bounty";
 import { BOUNTRA_ESCROW_ADDRESS, BOUNTRA_ESCROW_ABI } from "@/config/contracts";
 import { AUDIT_SCENARIOS } from "@/components/terminal/audit-scenarios";
@@ -27,12 +27,13 @@ export function ClaimBountyDrawer({
   const [commitHash, setCommitHash] = useState("");
   const [signature, setSignature] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (bounty) {
       setPrUrl(`${bounty.issueUrl.replace("/issues/", "/pull/")}`);
       setCommitHash("0xa4b19c8f0293d8b871928471c9a1028471928471");
+      setSignature("");
+      setErrorMsg(null);
     }
   }, [bounty]);
 
@@ -118,6 +119,254 @@ export function ClaimBountyDrawer({
     onClose();
   };
 
+  const daysRemaining = Math.max(0, Math.ceil((bounty.deadline - Date.now() / 1000) / 86400));
+
+  // ─── Render: Status-dependent content ───
+
+  const renderBountyMeta = () => (
+    <div className="space-y-3 mb-5">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="p-3 rounded-lg border border-surface-border bg-surface-primary">
+          <span className="block text-[10px] font-mono text-content-muted uppercase">Reward</span>
+          <span className="font-mono text-sm font-bold text-brand-primary">
+            {bounty.amountFormatted} {bounty.tokenSymbol}
+          </span>
+        </div>
+        <div className="p-3 rounded-lg border border-surface-border bg-surface-primary">
+          <span className="block text-[10px] font-mono text-content-muted uppercase">Deadline</span>
+          <span className="font-mono text-sm font-semibold text-content-primary">
+            {bounty.claimed ? "Completed" : `${daysRemaining}d remaining`}
+          </span>
+        </div>
+      </div>
+      <div className="p-3 rounded-lg border border-surface-border bg-surface-primary">
+        <span className="block text-[10px] font-mono text-content-muted uppercase mb-1">Repository</span>
+        <a
+          href={bounty.issueUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-1.5 font-mono text-xs text-brand-primary hover:underline"
+        >
+          <span>{bounty.repo}#{bounty.issueNumber}</span>
+          <ExternalLink className="h-3 w-3" />
+        </a>
+      </div>
+      {bounty.description && (
+        <p className="text-xs text-content-secondary leading-relaxed">{bounty.description}</p>
+      )}
+    </div>
+  );
+
+  const renderStatusBadge = () => {
+    const badges: Record<string, { label: string; className: string; icon: React.ReactNode }> = {
+      open: {
+        label: "Open for PR",
+        className: "border-status-success/30 bg-status-success/10 text-status-success",
+        icon: <CheckCircle2 className="h-3.5 w-3.5" />
+      },
+      in_review: {
+        label: "Audit in Review",
+        className: "border-status-warning/30 bg-status-warning/10 text-status-warning",
+        icon: <Clock className="h-3.5 w-3.5" />
+      },
+      claimed: {
+        label: "Claimed & Paid",
+        className: "border-surface-border bg-surface-tertiary text-content-muted",
+        icon: <CheckCircle2 className="h-3.5 w-3.5" />
+      },
+      cancelled: {
+        label: "Cancelled",
+        className: "border-status-danger/30 bg-status-danger/10 text-status-danger",
+        icon: <AlertCircle className="h-3.5 w-3.5" />
+      },
+    };
+    const b = badges[bounty.status];
+    return (
+      <span className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-mono font-medium border", b.className)}>
+        {b.icon}
+        {b.label}
+      </span>
+    );
+  };
+
+  // ─── In Review: read-only audit progress view ───
+  const renderInReviewContent = () => (
+    <div className="space-y-4">
+      {renderBountyMeta()}
+
+      <div className="p-4 rounded-xl border border-status-warning/30 bg-amber-950/10">
+        <div className="flex items-start gap-3">
+          <div className="h-9 w-9 rounded-lg bg-status-warning/20 flex items-center justify-center shrink-0">
+            <Clock className="h-4.5 w-4.5 text-status-warning" />
+          </div>
+          <div>
+            <h4 className="text-sm font-semibold text-content-primary mb-1">Bountra Agent Audit In Progress</h4>
+            <p className="text-xs text-content-secondary leading-relaxed">
+              A developer has submitted a Pull Request for this bounty. The Bountra Agent is currently running the 5-layer autonomous security audit pipeline.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-2.5">
+        <h4 className="text-xs font-mono font-semibold text-content-primary uppercase">Audit Pipeline Status</h4>
+        {[
+          { step: "CI Status Gate", status: "pass" },
+          { step: "Test Immutability Check", status: "pass" },
+          { step: "Anti-Prompt Injection Scan", status: "running" },
+          { step: "Code Quality Evaluation", status: "pending" },
+          { step: "ECDSA Signature Binding", status: "pending" },
+        ].map((layer, idx) => (
+          <div key={idx} className="flex items-center justify-between p-2.5 rounded-lg border border-surface-border bg-surface-primary">
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-[10px] text-content-muted w-4">{idx + 1}.</span>
+              <span className="font-mono text-xs text-content-primary">{layer.step}</span>
+            </div>
+            <span className={cn(
+              "font-mono text-[10px] font-semibold uppercase px-2 py-0.5 rounded",
+              layer.status === "pass" && "text-status-success bg-status-success/10",
+              layer.status === "running" && "text-status-warning bg-status-warning/10 animate-pulse",
+              layer.status === "pending" && "text-content-muted bg-surface-tertiary",
+            )}>
+              {layer.status === "running" ? "Running..." : layer.status}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // ─── Claimed: view-only audit proof ───
+  const renderClaimedContent = () => (
+    <div className="space-y-4">
+      {renderBountyMeta()}
+
+      <div className="p-4 rounded-xl border border-status-success/30 bg-emerald-950/10">
+        <div className="flex items-start gap-3">
+          <CheckCircle2 className="h-8 w-8 text-status-success shrink-0" />
+          <div>
+            <h4 className="text-sm font-semibold text-content-primary mb-1">Bounty Claimed & Settled</h4>
+            <p className="text-xs text-content-secondary leading-relaxed">
+              This bounty has been successfully audited by Bountra Agent and {bounty.amountFormatted} {bounty.tokenSymbol} was released to the developer on-chain.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-2.5">
+        <h4 className="text-xs font-mono font-semibold text-content-primary uppercase">Audit Verification</h4>
+        {[
+          "CI Status Gate — Passed",
+          "Test Immutability Check — Passed",
+          "Anti-Prompt Injection Scan — Clean",
+          "Code Quality Evaluation — Score 96/100",
+          "ECDSA Signature Binding — Verified",
+        ].map((step, idx) => (
+          <div key={idx} className="flex items-center gap-2 p-2.5 rounded-lg border border-surface-border bg-surface-primary">
+            <ShieldCheck className="h-3.5 w-3.5 text-status-success shrink-0" />
+            <span className="font-mono text-xs text-content-primary">{step}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // ─── Cancelled: read-only ───
+  const renderCancelledContent = () => (
+    <div className="space-y-4">
+      {renderBountyMeta()}
+
+      <div className="p-4 rounded-xl border border-status-danger/30 bg-red-950/10">
+        <div className="flex items-start gap-3">
+          <AlertCircle className="h-8 w-8 text-status-danger shrink-0" />
+          <div>
+            <h4 className="text-sm font-semibold text-content-primary mb-1">Bounty Cancelled</h4>
+            <p className="text-xs text-content-secondary leading-relaxed">
+              This bounty was cancelled by the sponsor after the deadline passed. The escrowed {bounty.amountFormatted} {bounty.tokenSymbol} has been refunded.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ─── Open: full claim form ───
+  const renderOpenContent = () => (
+    <div className="space-y-4">
+      {renderBountyMeta()}
+
+      <div className="space-y-3.5">
+        <button
+          type="button"
+          onClick={handleAutofillDemoProof}
+          className="w-full flex items-center justify-center gap-2 rounded-lg border border-brand-primary/40 bg-brand-primary/10 px-3 py-2 text-xs font-mono text-brand-primary hover:bg-brand-primary/20 transition-colors"
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          <span>Autofill Proof from Live Audit Terminal</span>
+        </button>
+
+        <div>
+          <label className="block text-xs font-mono font-medium text-content-secondary mb-1">
+            Claimant Wallet (Beneficiary)
+          </label>
+          <input
+            type="text"
+            disabled
+            value={address || "Please connect wallet"}
+            className="w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2 text-xs font-mono text-content-muted"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-mono font-medium text-content-secondary mb-1">
+            GitHub Pull Request URL
+          </label>
+          <input
+            type="url"
+            value={prUrl}
+            onChange={(e) => setPrUrl(e.target.value)}
+            placeholder="https://github.com/bountra/core-contracts/pull/43"
+            className="w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2 text-xs font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-mono font-medium text-content-secondary mb-1">
+            Audited Commit Hash
+          </label>
+          <input
+            type="text"
+            value={commitHash}
+            onChange={(e) => setCommitHash(e.target.value)}
+            placeholder="0x..."
+            className="w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2 text-xs font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-mono font-medium text-content-secondary mb-1">
+            AI Agent Cryptographic Signature
+          </label>
+          <textarea
+            rows={3}
+            value={signature}
+            onChange={(e) => setSignature(e.target.value)}
+            placeholder="0x... (65-byte ECDSA signature signed by agent 0x2e10...)"
+            className="w-full rounded-lg border border-surface-border bg-surface-primary p-2.5 text-[11px] font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none resize-none"
+          />
+        </div>
+
+        {errorMsg && (
+          <div className="p-3 rounded-lg border border-status-danger/30 bg-red-950/20 text-xs text-status-danger font-mono flex items-start gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+            <span>{errorMsg}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  // ─── Main Drawer ───
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
@@ -125,9 +374,12 @@ export function ClaimBountyDrawer({
           <div>
             <div className="flex items-center justify-between border-b border-surface-border pb-4 mb-5">
               <div>
-                <span className="font-mono text-[10px] text-content-muted uppercase">
-                  Bounty ID #{bounty.id}
-                </span>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-mono text-[10px] text-content-muted uppercase">
+                    Bounty ID #{bounty.id}
+                  </span>
+                  {renderStatusBadge()}
+                </div>
                 <h2 className="text-base font-bold text-content-primary truncate max-w-[260px]">
                   {bounty.title}
                 </h2>
@@ -160,112 +412,20 @@ export function ClaimBountyDrawer({
                     <ExternalLink className="h-3.5 w-3.5" />
                   </a>
                 )}
-                <button
-                  onClick={resetAll}
-                  className="w-full rounded-lg bg-brand-primary text-black font-semibold text-xs py-2.5 hover:bg-brand-hover transition-colors"
-                >
-                  Close & Done
-                </button>
               </div>
+            ) : bounty.status === "in_review" ? (
+              renderInReviewContent()
+            ) : bounty.status === "claimed" ? (
+              renderClaimedContent()
+            ) : bounty.status === "cancelled" ? (
+              renderCancelledContent()
             ) : (
-              <div className="space-y-4">
-                <div className="rounded-xl border border-surface-border bg-surface-primary/70 p-3.5">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-mono text-[10px] text-content-muted uppercase">Escrow Locked Reward</span>
-                    <span className="font-mono text-xs font-semibold text-status-success">Ready for Release</span>
-                  </div>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="font-mono text-2xl font-bold text-brand-primary">
-                      {bounty.amountFormatted}
-                    </span>
-                    <span className="font-mono text-xs font-medium text-content-secondary">
-                      {bounty.tokenSymbol}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-surface-border bg-surface-tertiary/40 p-3 text-xs space-y-1.5">
-                  <div className="flex justify-between font-mono text-[11px]">
-                    <span className="text-content-muted">Target Repo:</span>
-                    <span className="text-content-primary font-semibold">{bounty.repo}</span>
-                  </div>
-                  <div className="flex justify-between font-mono text-[11px]">
-                    <span className="text-content-muted">Creator:</span>
-                    <span className="text-content-primary">{formatAddress(bounty.creator)}</span>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleAutofillDemoProof}
-                  className="w-full flex items-center justify-center gap-2 rounded-lg border border-brand-primary/40 bg-brand-primary/10 px-3 py-2 text-xs font-mono text-brand-primary hover:bg-brand-primary/20 transition-colors"
-                >
-                  <Sparkles className="h-3.5 w-3.5" />
-                  <span>Autofill Proof from Live Audit Terminal</span>
-                </button>
-
-                <div>
-                  <label className="block text-xs font-mono font-medium text-content-secondary mb-1">
-                    Claimant Wallet (Beneficiary)
-                  </label>
-                  <input
-                    type="text"
-                    disabled
-                    value={address || "Please connect wallet"}
-                    className="w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2 text-xs font-mono text-content-muted"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-mono font-medium text-content-secondary mb-1">
-                    GitHub Pull Request URL
-                  </label>
-                  <input
-                    type="url"
-                    value={prUrl}
-                    onChange={(e) => setPrUrl(e.target.value)}
-                    placeholder="https://github.com/bountra/core-contracts/pull/43"
-                    className="w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2 text-xs font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-mono font-medium text-content-secondary mb-1">
-                    Audited Commit Hash
-                  </label>
-                  <input
-                    type="text"
-                    value={commitHash}
-                    onChange={(e) => setCommitHash(e.target.value)}
-                    placeholder="0x..."
-                    className="w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2 text-xs font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-mono font-medium text-content-secondary mb-1">
-                    AI Agent Cryptographic Signature
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={signature}
-                    onChange={(e) => setSignature(e.target.value)}
-                    placeholder="0x... (65-byte ECDSA signature signed by agent 0x2e10...)"
-                    className="w-full rounded-lg border border-surface-border bg-surface-primary p-2.5 text-[11px] font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none resize-none"
-                  />
-                </div>
-
-                {errorMsg && (
-                  <div className="p-3 rounded-lg border border-status-danger/30 bg-red-950/20 text-xs text-status-danger font-mono flex items-start gap-2">
-                    <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                    <span>{errorMsg}</span>
-                  </div>
-                )}
-              </div>
+              renderOpenContent()
             )}
           </div>
 
-          {!isClaimSuccess && (
+          {/* Action buttons — only for open status (claim form) */}
+          {!isClaimSuccess && bounty.status === "open" && (
             <div className="pt-4 border-t border-surface-border flex flex-col gap-2">
               <button
                 onClick={handleClaim}
@@ -277,8 +437,6 @@ export function ClaimBountyDrawer({
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     <span>Executing Escrow Claim on BSC Testnet...</span>
                   </>
-                ) : bounty.claimed ? (
-                  <span>Bounty Already Claimed</span>
                 ) : (
                   <span>Claim {bounty.amountFormatted} {bounty.tokenSymbol} Now</span>
                 )}
@@ -289,6 +447,18 @@ export function ClaimBountyDrawer({
                 className="w-full rounded-lg border border-surface-border bg-surface-tertiary text-content-secondary font-medium text-xs py-2 hover:bg-surface-primary hover:text-content-primary transition-colors"
               >
                 Cancel
+              </button>
+            </div>
+          )}
+
+          {/* Close button for non-open statuses */}
+          {!isClaimSuccess && bounty.status !== "open" && (
+            <div className="pt-4 border-t border-surface-border">
+              <button
+                onClick={resetAll}
+                className="w-full rounded-lg border border-surface-border bg-surface-tertiary text-content-secondary font-medium text-xs py-2.5 hover:bg-surface-primary hover:text-content-primary transition-colors"
+              >
+                Close
               </button>
             </div>
           )}

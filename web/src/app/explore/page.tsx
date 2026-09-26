@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useAccount } from "wagmi";
 import { PlusCircle, ShieldCheck, Coins, Zap } from "lucide-react";
 import { Header } from "@/components/layout/Header";
@@ -10,16 +10,32 @@ import { BountyFilter } from "@/components/explorer/BountyFilter";
 import { CreateBountyModal } from "@/components/modals/CreateBountyModal";
 import { ClaimBountyDrawer } from "@/components/modals/ClaimBountyDrawer";
 import { INITIAL_BOUNTIES } from "@/lib/mock-bounties";
+import { useOnChainBounties } from "@/hooks/useOnChainBounties";
 import { BountyItem } from "@/types/bounty";
 
 export default function ExplorePage() {
   const { isConnected } = useAccount();
+  const { onChainBounties } = useOnChainBounties();
   const [bounties, setBounties] = useState<BountyItem[]>(INITIAL_BOUNTIES);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [sortBy, setSortBy] = useState("reward_desc");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedBountyForClaim, setSelectedBountyForClaim] = useState<BountyItem | null>(null);
+
+  // Merge on-chain bounties with mock data (avoid duplicate IDs)
+  useEffect(() => {
+    if (onChainBounties.length === 0) return;
+    const mockIds = new Set(INITIAL_BOUNTIES.map((b) => b.id));
+    // Offset on-chain IDs to avoid collision with mock IDs
+    const merged = [
+      ...INITIAL_BOUNTIES,
+      ...onChainBounties
+        .filter((b) => !mockIds.has(b.id))
+        .map((b) => ({ ...b, id: b.id + 1000 })),
+    ];
+    setBounties(merged);
+  }, [onChainBounties]);
 
   const filteredBounties = useMemo(() => {
     return bounties

@@ -193,7 +193,7 @@ export function SponsorTab({ bounties, onCreateBounty, onRefresh }: SponsorTabPr
                         ) : b.cancelled ? (
                           <span className="text-[11px] text-status-danger">Refunded</span>
                         ) : (
-                          <span className="text-[11px] text-content-secondary">Locked in Vault</span>
+                          <span className="text-[11px] text-content-secondary" title="Refund available after deadline passes">Locked in Vault</span>
                         )}
                       </td>
                     </tr>

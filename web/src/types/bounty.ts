@@ -17,4 +17,5 @@ export interface BountyItem {
   claimed: boolean;
   cancelled: boolean;
   status: BountyStatus;
+  isOnChain?: boolean;
 }

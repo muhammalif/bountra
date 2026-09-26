@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAccount } from "wagmi";
 import { usePrivy } from "@privy-io/react-auth";
 import { Header } from "@/components/layout/Header";
@@ -11,22 +11,42 @@ import { DeveloperTab } from "@/components/dashboard/DeveloperTab";
 import { CreateBountyModal } from "@/components/modals/CreateBountyModal";
 import { ClaimBountyDrawer } from "@/components/modals/ClaimBountyDrawer";
 import { INITIAL_BOUNTIES } from "@/lib/mock-bounties";
+import { useOnChainBounties } from "@/hooks/useOnChainBounties";
 import { BountyItem } from "@/types/bounty";
-import { LogIn, ShieldAlert, ArrowRight, Sparkles } from "lucide-react";
+import { LogIn, ArrowRight } from "lucide-react";
 
 export default function DashboardPage() {
   const { isConnected, address } = useAccount();
   const { ready, authenticated, login } = usePrivy();
+  const { onChainBounties } = useOnChainBounties();
   const [activeTab, setActiveTab] = useState<"sponsor" | "developer">("sponsor");
-  const [bounties, setBounties] = useState<BountyItem[]>(INITIAL_BOUNTIES);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedBountyForClaim, setSelectedBountyForClaim] = useState<BountyItem | null>(null);
 
-  const sponsorBounties = bounties.filter(
-    (b) => b.creator.toLowerCase() === "0x1a8f9b123c52a9d490b8b0f2849ef3e5dcb76a12".toLowerCase()
-  );
+  // Sponsor Hub: show on-chain bounties created by connected wallet
+  // + mock bounties matching connected wallet (fallback for demo)
+  const sponsorBounties = useMemo(() => {
+    if (!address) return [];
+    const addr = address.toLowerCase();
 
-  const devClaims = bounties.slice(0, 3);
+    // On-chain bounties owned by this wallet
+    const onChain = onChainBounties.filter(
+      (b) => b.creator.toLowerCase() === addr
+    );
+
+    // Mock bounties that match (for demo richness, optional)
+    const mock = INITIAL_BOUNTIES.filter(
+      (b) => b.creator.toLowerCase() === addr
+    );
+
+    // Combine, on-chain first
+    return [...onChain, ...mock];
+  }, [address, onChainBounties]);
+
+  // Developer Hub: mock claims for demo representation
+  const devClaims = useMemo(() => {
+    return INITIAL_BOUNTIES.slice(0, 3);
+  }, []);
 
   const isUserLoggedIn = isConnected || authenticated;
 
