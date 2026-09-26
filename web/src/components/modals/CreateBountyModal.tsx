@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from "wagmi";
+import { usePrivy } from "@privy-io/react-auth";
 import { parseUnits, maxUint256 } from "viem";
 import { X, AlertCircle, CheckCircle2, Loader2, ExternalLink, ShieldAlert } from "lucide-react";
 import { BOUNTRA_ESCROW_ADDRESS, BOUNTRA_ESCROW_ABI, ERC20_ABI, MOCK_USDT_ADDRESS } from "@/config/contracts";
@@ -15,7 +16,10 @@ interface CreateBountyModalProps {
 }
 
 export function CreateBountyModal({ isOpen, onClose, onSuccess }: CreateBountyModalProps) {
-  const { address, isConnected } = useAccount();
+  const { address: wagmiAddress, isConnected } = useAccount();
+  const { user, authenticated } = usePrivy();
+  const address = wagmiAddress || (user?.wallet?.address as `0x${string}` | undefined);
+  const isWalletActive = Boolean(isConnected || authenticated);
   const [issueUrl, setIssueUrl] = useState("");
   const [amount, setAmount] = useState("100");
   const [durationDays, setDurationDays] = useState("14");
@@ -45,6 +49,14 @@ export function CreateBountyModal({ isOpen, onClose, onSuccess }: CreateBountyMo
   const { isLoading: isApproveConfirming, isSuccess: isApproveSuccess } = useWaitForTransactionReceipt({
     hash: approveTxHash
   });
+
+  useEffect(() => {
+    if (isOpen) {
+      setErrorMsg(null);
+      resetApprove();
+      resetCreate();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (isApproveSuccess) {
@@ -176,7 +188,7 @@ export function CreateBountyModal({ isOpen, onClose, onSuccess }: CreateBountyMo
           </div>
         ) : (
           <div className="space-y-4">
-            {!isConnected && (
+            {!isWalletActive && (
               <div className="p-3 rounded-lg border border-status-warning/30 bg-amber-950/20 flex items-start gap-2.5 text-xs text-amber-300">
                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                 <span>Please connect your wallet first to create and fund an on-chain bounty escrow.</span>
@@ -263,7 +275,7 @@ export function CreateBountyModal({ isOpen, onClose, onSuccess }: CreateBountyMo
               {needsApproval ? (
                 <button
                   onClick={handleApprove}
-                  disabled={!isConnected || isApprovePending || isApproveConfirming}
+                  disabled={!isWalletActive || isApprovePending || isApproveConfirming}
                   className="w-full flex items-center justify-center gap-2 rounded-lg bg-brand-primary text-black font-semibold text-xs py-2.5 hover:bg-brand-hover transition-colors disabled:opacity-50"
                 >
                   {isApprovePending || isApproveConfirming ? (
@@ -278,7 +290,7 @@ export function CreateBountyModal({ isOpen, onClose, onSuccess }: CreateBountyMo
               ) : (
                 <button
                   onClick={handleCreate}
-                  disabled={!isConnected || isCreatePending || isCreateConfirming}
+                  disabled={!isWalletActive || isCreatePending || isCreateConfirming}
                   className="w-full flex items-center justify-center gap-2 rounded-lg bg-brand-primary text-black font-semibold text-xs py-2.5 hover:bg-brand-hover transition-colors disabled:opacity-50"
                 >
                   {isCreatePending || isCreateConfirming ? (

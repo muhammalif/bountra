@@ -18,7 +18,7 @@ import { LogIn, ArrowRight } from "lucide-react";
 export default function DashboardPage() {
   const { isConnected, address } = useAccount();
   const { ready, authenticated, login } = usePrivy();
-  const { onChainBounties } = useOnChainBounties();
+  const { onChainBounties, refetch: refetchOnChain } = useOnChainBounties();
   const [activeTab, setActiveTab] = useState<"sponsor" | "developer">("sponsor");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedBountyForClaim, setSelectedBountyForClaim] = useState<BountyItem | null>(null);
@@ -89,7 +89,7 @@ export default function DashboardPage() {
               <SponsorTab
                 bounties={sponsorBounties}
                 onCreateBounty={() => setIsCreateModalOpen(true)}
-                onRefresh={() => {}}
+                onRefresh={refetchOnChain}
               />
             )}
 
@@ -106,7 +106,10 @@ export default function DashboardPage() {
       <CreateBountyModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={() => setIsCreateModalOpen(false)}
+        onSuccess={() => {
+          setIsCreateModalOpen(false);
+          refetchOnChain();
+        }}
       />
 
       <ClaimBountyDrawer

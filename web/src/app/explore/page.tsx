@@ -15,7 +15,7 @@ import { BountyItem } from "@/types/bounty";
 
 export default function ExplorePage() {
   const { isConnected } = useAccount();
-  const { onChainBounties } = useOnChainBounties();
+  const { onChainBounties, refetch: refetchOnChain } = useOnChainBounties();
   const [bounties, setBounties] = useState<BountyItem[]>(INITIAL_BOUNTIES);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
@@ -185,6 +185,7 @@ export default function ExplorePage() {
         onClose={() => setIsCreateModalOpen(false)}
         onSuccess={() => {
           setIsCreateModalOpen(false);
+          refetchOnChain();
         }}
       />
 

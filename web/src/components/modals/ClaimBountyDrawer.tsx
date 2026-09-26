@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { X, ExternalLink, ShieldCheck, CheckCircle2, Loader2, Sparkles, AlertCircle, Clock, Eye } from "lucide-react";
+import { usePrivy } from "@privy-io/react-auth";
+import { X, ExternalLink, ShieldCheck, CheckCircle2, Loader2, Sparkles, AlertCircle, Clock, Eye, GitPullRequest, ArrowRight } from "lucide-react";
 import { BountyItem } from "@/types/bounty";
 import { BOUNTRA_ESCROW_ADDRESS, BOUNTRA_ESCROW_ABI } from "@/config/contracts";
 import { AUDIT_SCENARIOS } from "@/components/terminal/audit-scenarios";
@@ -22,7 +23,12 @@ export function ClaimBountyDrawer({
   onClose,
   onSuccess
 }: ClaimBountyDrawerProps) {
-  const { address, isConnected } = useAccount();
+  const { address: wagmiAddress, isConnected } = useAccount();
+  const { user, authenticated } = usePrivy();
+  const address = wagmiAddress || (user?.wallet?.address as `0x${string}` | undefined);
+  const isWalletActive = Boolean(isConnected || authenticated);
+
+  const [showSubmitProof, setShowSubmitProof] = useState(false);
   const [prUrl, setPrUrl] = useState("");
   const [commitHash, setCommitHash] = useState("");
   const [signature, setSignature] = useState("");
@@ -34,6 +40,7 @@ export function ClaimBountyDrawer({
       setCommitHash("0xa4b19c8f0293d8b871928471c9a1028471928471");
       setSignature("");
       setErrorMsg(null);
+      setShowSubmitProof(false);
     }
   }, [bounty]);
 
@@ -290,79 +297,152 @@ export function ClaimBountyDrawer({
     </div>
   );
 
-  // ─── Open: full claim form ───
+  // ─── Open: Issue Guide & Work Instructions (with secondary claim toggle) ───
   const renderOpenContent = () => (
     <div className="space-y-4">
       {renderBountyMeta()}
 
-      <div className="space-y-3.5">
-        <button
-          type="button"
-          onClick={handleAutofillDemoProof}
-          className="w-full flex items-center justify-center gap-2 rounded-lg border border-brand-primary/40 bg-brand-primary/10 px-3 py-2 text-xs font-mono text-brand-primary hover:bg-brand-primary/20 transition-colors"
-        >
-          <Sparkles className="h-3.5 w-3.5" />
-          <span>Autofill Proof from Live Audit Terminal</span>
-        </button>
+      {!showSubmitProof ? (
+        <div className="space-y-4">
+          <div className="p-4 rounded-xl border border-surface-border bg-surface-primary space-y-3">
+            <span className="font-mono text-[10px] text-brand-primary uppercase font-semibold block">
+              How to Solve & Earn This Bounty
+            </span>
+            <div className="space-y-2.5 font-mono text-xs text-content-secondary">
+              <div className="flex items-start gap-2.5">
+                <span className="h-5 w-5 rounded bg-surface-tertiary flex items-center justify-center text-[10px] font-bold text-content-primary shrink-0">
+                  1
+                </span>
+                <span>Inspect requirements & acceptance criteria in the GitHub issue.</span>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <span className="h-5 w-5 rounded bg-surface-tertiary flex items-center justify-center text-[10px] font-bold text-content-primary shrink-0">
+                  2
+                </span>
+                <span>Fork the repository, write code & ensure all unit tests pass.</span>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <span className="h-5 w-5 rounded bg-surface-tertiary flex items-center justify-center text-[10px] font-bold text-content-primary shrink-0">
+                  3
+                </span>
+                <span>Submit PR referencing <code className="text-brand-primary font-bold">Fixes #{bounty.issueNumber}</code>.</span>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <span className="h-5 w-5 rounded bg-surface-tertiary flex items-center justify-center text-[10px] font-bold text-content-primary shrink-0">
+                  4
+                </span>
+                <span>Bountra Agent triggers automated 5-layer audit in &lt;15 seconds.</span>
+              </div>
+            </div>
 
-        <div>
-          <label className="block text-xs font-mono font-medium text-content-secondary mb-1">
-            Claimant Wallet (Beneficiary)
-          </label>
-          <input
-            type="text"
-            disabled
-            value={address || "Please connect wallet"}
-            className="w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2 text-xs font-mono text-content-muted"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-mono font-medium text-content-secondary mb-1">
-            GitHub Pull Request URL
-          </label>
-          <input
-            type="url"
-            value={prUrl}
-            onChange={(e) => setPrUrl(e.target.value)}
-            placeholder="https://github.com/bountra/core-contracts/pull/43"
-            className="w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2 text-xs font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-mono font-medium text-content-secondary mb-1">
-            Audited Commit Hash
-          </label>
-          <input
-            type="text"
-            value={commitHash}
-            onChange={(e) => setCommitHash(e.target.value)}
-            placeholder="0x..."
-            className="w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2 text-xs font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-mono font-medium text-content-secondary mb-1">
-            AI Agent Cryptographic Signature
-          </label>
-          <textarea
-            rows={3}
-            value={signature}
-            onChange={(e) => setSignature(e.target.value)}
-            placeholder="0x... (65-byte ECDSA signature signed by agent 0x2e10...)"
-            className="w-full rounded-lg border border-surface-border bg-surface-primary p-2.5 text-[11px] font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none resize-none"
-          />
-        </div>
-
-        {errorMsg && (
-          <div className="p-3 rounded-lg border border-status-danger/30 bg-red-950/20 text-xs text-status-danger font-mono flex items-start gap-2">
-            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-            <span>{errorMsg}</span>
+            <a
+              href={bounty.issueUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 w-full flex items-center justify-center gap-2 rounded-lg bg-brand-primary text-black font-semibold text-xs py-2.5 hover:bg-brand-hover transition-colors"
+            >
+              <span>Open Issue on GitHub</span>
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
           </div>
-        )}
-      </div>
+
+          <div className="p-3 rounded-lg border border-dashed border-surface-border bg-surface-primary/40 flex items-center justify-between">
+            <div className="text-[11px] text-content-muted">
+              <span>Already passed AI review?</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowSubmitProof(true)}
+              className="text-xs font-mono text-brand-primary hover:underline flex items-center gap-1"
+            >
+              <span>Submit Proof & Claim</span>
+              <ArrowRight className="h-3 w-3" />
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-3.5">
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-xs font-semibold text-content-primary">
+              Cryptographic Claim Proof
+            </span>
+            <button
+              type="button"
+              onClick={() => setShowSubmitProof(false)}
+              className="text-[11px] font-mono text-content-muted hover:text-content-primary"
+            >
+              ← Back to Issue Guide
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleAutofillDemoProof}
+            className="w-full flex items-center justify-center gap-2 rounded-lg border border-brand-primary/40 bg-brand-primary/10 px-3 py-2 text-xs font-mono text-brand-primary hover:bg-brand-primary/20 transition-colors"
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>Autofill Proof from Live Audit Terminal</span>
+          </button>
+
+          <div>
+            <label className="block text-xs font-mono font-medium text-content-secondary mb-1">
+              Claimant Wallet (Beneficiary)
+            </label>
+            <input
+              type="text"
+              disabled
+              value={address || "Please connect wallet"}
+              className="w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2 text-xs font-mono text-content-muted"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-mono font-medium text-content-secondary mb-1">
+              GitHub Pull Request URL
+            </label>
+            <input
+              type="url"
+              value={prUrl}
+              onChange={(e) => setPrUrl(e.target.value)}
+              placeholder="https://github.com/bountra/core-contracts/pull/43"
+              className="w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2 text-xs font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-mono font-medium text-content-secondary mb-1">
+              Audited Commit Hash
+            </label>
+            <input
+              type="text"
+              value={commitHash}
+              onChange={(e) => setCommitHash(e.target.value)}
+              placeholder="0x..."
+              className="w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2 text-xs font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-mono font-medium text-content-secondary mb-1">
+              AI Agent Cryptographic Signature
+            </label>
+            <textarea
+              rows={3}
+              value={signature}
+              onChange={(e) => setSignature(e.target.value)}
+              placeholder="0x... (65-byte ECDSA signature signed by agent 0x2e10...)"
+              className="w-full rounded-lg border border-surface-border bg-surface-primary p-2.5 text-[11px] font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none resize-none"
+            />
+          </div>
+
+          {errorMsg && (
+            <div className="p-3 rounded-lg border border-status-danger/30 bg-red-950/20 text-xs text-status-danger font-mono flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 
@@ -424,12 +504,12 @@ export function ClaimBountyDrawer({
             )}
           </div>
 
-          {/* Action buttons — only for open status (claim form) */}
-          {!isClaimSuccess && bounty.status === "open" && (
+          {/* Action buttons — only for open status AND when showing claim form */}
+          {!isClaimSuccess && bounty.status === "open" && showSubmitProof && (
             <div className="pt-4 border-t border-surface-border flex flex-col gap-2">
               <button
                 onClick={handleClaim}
-                disabled={!isConnected || isClaimPending || isClaimConfirming || bounty.claimed}
+                disabled={!isWalletActive || isClaimPending || isClaimConfirming || bounty.claimed}
                 className="w-full flex items-center justify-center gap-2 rounded-lg bg-brand-primary text-black font-semibold text-xs py-2.5 hover:bg-brand-hover transition-colors disabled:opacity-50"
               >
                 {isClaimPending || isClaimConfirming ? (
@@ -443,7 +523,7 @@ export function ClaimBountyDrawer({
               </button>
 
               <button
-                onClick={resetAll}
+                onClick={() => setShowSubmitProof(false)}
                 className="w-full rounded-lg border border-surface-border bg-surface-tertiary text-content-secondary font-medium text-xs py-2 hover:bg-surface-primary hover:text-content-primary transition-colors"
               >
                 Cancel
@@ -451,8 +531,8 @@ export function ClaimBountyDrawer({
             </div>
           )}
 
-          {/* Close button for non-open statuses */}
-          {!isClaimSuccess && bounty.status !== "open" && (
+          {/* Close button for other states */}
+          {!isClaimSuccess && (bounty.status !== "open" || !showSubmitProof) && (
             <div className="pt-4 border-t border-surface-border">
               <button
                 onClick={resetAll}
