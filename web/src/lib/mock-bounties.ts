@@ -39,6 +39,24 @@ export const INITIAL_BOUNTIES: BountyItem[] = [
     status: "in_review"
   },
   {
+    id: 6,
+    creator: "0x1a8f9B123c52A9D490b8B0F2849eF3e5Dcb76A12",
+    token: MOCK_USDT_ADDRESS,
+    tokenSymbol: "USDT",
+    amount: "350000000000000000000",
+    amountFormatted: "350",
+    issueUrl: "https://github.com/bountra/core-contracts/issues/14",
+    repo: "bountra/core-contracts",
+    issueNumber: 14,
+    title: "Implement Gas-Optimized Merkle Proof Verifier for Batch Claims",
+    description: "PR #15 passed all 5 security layers with score 96/100! Bountra Agent has generated cryptographic ECDSA authorization proof. Ready for immediate on-chain settlement.",
+    tags: ["Solidity", "Gas Optimization", "Audit Passed"],
+    deadline: Math.floor(Date.now() / 1000) + 86400 * 8,
+    claimed: false,
+    cancelled: false,
+    status: "ready_to_claim"
+  },
+  {
     id: 2,
     creator: "0x98A1337C4295847F2a89C91B48A1054Ce3B14022",
     token: MOCK_USDT_ADDRESS,

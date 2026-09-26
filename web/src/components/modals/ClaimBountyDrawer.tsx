@@ -36,11 +36,19 @@ export function ClaimBountyDrawer({
 
   useEffect(() => {
     if (bounty) {
-      setPrUrl(`${bounty.issueUrl.replace("/issues/", "/pull/")}`);
-      setCommitHash("0xa4b19c8f0293d8b871928471c9a1028471928471");
-      setSignature("");
+      if (bounty.status === "ready_to_claim") {
+        const cleanScenario = AUDIT_SCENARIOS[0];
+        setPrUrl(`https://github.com/${cleanScenario.repo}/pull/${cleanScenario.prNumber}`);
+        setCommitHash("0x7f8a92b456381029384756281928475629102938");
+        setSignature(cleanScenario.signatureData?.signature || "");
+        setShowSubmitProof(true);
+      } else {
+        setPrUrl(`${bounty.issueUrl.replace("/issues/", "/pull/")}`);
+        setCommitHash("0xa4b19c8f0293d8b871928471c9a1028471928471");
+        setSignature("");
+        setShowSubmitProof(false);
+      }
       setErrorMsg(null);
-      setShowSubmitProof(false);
     }
   }, [bounty]);
 
@@ -175,6 +183,11 @@ export function ClaimBountyDrawer({
         label: "Audit in Review",
         className: "border-status-warning/30 bg-status-warning/10 text-status-warning",
         icon: <Clock className="h-3.5 w-3.5" />
+      },
+      ready_to_claim: {
+        label: "Passed (Ready to Claim)",
+        className: "border-brand-primary/40 bg-brand-primary/10 text-brand-primary",
+        icon: <Sparkles className="h-3.5 w-3.5" />
       },
       claimed: {
         label: "Claimed & Paid",
@@ -555,8 +568,8 @@ export function ClaimBountyDrawer({
             )}
           </div>
 
-          {/* Action buttons — only for open status AND when showing claim form */}
-          {!isClaimSuccess && bounty.status === "open" && showSubmitProof && (
+          {/* Action buttons — only for open/ready_to_claim status AND when showing claim form */}
+          {!isClaimSuccess && (bounty.status === "open" || bounty.status === "ready_to_claim") && showSubmitProof && (
             <div className="pt-4 border-t border-surface-border flex flex-col gap-2">
               <button
                 onClick={handleClaim}
@@ -583,7 +596,7 @@ export function ClaimBountyDrawer({
           )}
 
           {/* Close button for other states */}
-          {!isClaimSuccess && (bounty.status !== "open" || !showSubmitProof) && (
+          {!isClaimSuccess && (!["open", "ready_to_claim"].includes(bounty.status) || !showSubmitProof) && (
             <div className="pt-4 border-t border-surface-border">
               <button
                 onClick={resetAll}

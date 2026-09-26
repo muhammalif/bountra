@@ -1,4 +1,4 @@
-export type BountyStatus = "open" | "in_review" | "claimed" | "rejected" | "cancelled";
+export type BountyStatus = "open" | "in_review" | "ready_to_claim" | "claimed" | "rejected" | "cancelled";
 
 export interface BountyItem {
   id: number;

@@ -23,6 +23,11 @@ export function BountyCard({ bounty, onSelect }: BountyCardProps) {
           label: "Audit in Review",
           className: "border-status-warning/30 bg-status-warning/10 text-status-warning"
         };
+      case "ready_to_claim":
+        return {
+          label: "Passed (Ready to Claim)",
+          className: "border-brand-primary/40 bg-brand-primary/10 text-brand-primary font-semibold"
+        };
       case "claimed":
         return {
           label: "Claimed & Paid",
@@ -107,6 +112,8 @@ export function BountyCard({ bounty, onSelect }: BountyCardProps) {
             <span>
               {bounty.status === "claimed"
                 ? "View Audit Proof"
+                : bounty.status === "ready_to_claim"
+                ? "Claim Reward (Passed)"
                 : bounty.status === "in_review"
                 ? "View Audit Status"
                 : bounty.status === "rejected"
