@@ -64,7 +64,7 @@ export function AuditTerminal() {
         return "text-amber-400 border-amber-500/30 bg-amber-950/20";
       case "TAMPER_GUARD":
         return "text-cyan-400 border-cyan-500/30 bg-cyan-950/20";
-      case "GEMINI_EVAL":
+      case "AGENT_EVAL":
         return "text-purple-400 border-purple-500/30 bg-purple-950/20";
       case "ECDSA_SIGN":
         return "text-brand-primary border-brand-primary/30 bg-brand-primary/10";

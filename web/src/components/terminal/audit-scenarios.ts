@@ -1,6 +1,6 @@
 export interface AuditLogEntry {
   timestamp: string;
-  tag: "INGEST" | "CI_GATE" | "TAMPER_GUARD" | "GEMINI_EVAL" | "ECDSA_SIGN" | "ESCROW" | "ERROR";
+  tag: "INGEST" | "CI_GATE" | "TAMPER_GUARD" | "AGENT_EVAL" | "ECDSA_SIGN" | "ESCROW" | "ERROR";
   message: string;
   details?: string;
 }
@@ -83,13 +83,13 @@ export const AUDIT_SCENARIOS: AuditScenario[] = [
       },
       {
         timestamp: "00:05.120",
-        tag: "GEMINI_EVAL",
+        tag: "AGENT_EVAL",
         message: "AST Diff parsed: +48 -12 lines in src/BountraEscrow.sol"
       },
       {
         timestamp: "00:07.480",
-        tag: "GEMINI_EVAL",
-        message: "Evaluation complete. Security Score: 96/100. Verdict: APPROVED (No reentrancy, check-effects-interactions adhered)."
+        tag: "AGENT_EVAL",
+        message: "Semantic audit complete. Security Score: 96/100. Verdict: APPROVED (No reentrancy, check-effects-interactions adhered)."
       },
       {
         timestamp: "00:08.110",
@@ -223,12 +223,12 @@ export const AUDIT_SCENARIOS: AuditScenario[] = [
       },
       {
         timestamp: "00:01.890",
-        tag: "GEMINI_EVAL",
+        tag: "AGENT_EVAL",
         message: "Ingesting PR metadata into XML isolated sandbox <untrusted_user_input>..."
       },
       {
         timestamp: "00:03.240",
-        tag: "GEMINI_EVAL",
+        tag: "AGENT_EVAL",
         message: "Prompt Injection heuristic analyzer triggered: 'SYSTEM OVERRIDE', 'IGNORE PREVIOUS RULES' found in PR body."
       },
       {
