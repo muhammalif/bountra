@@ -25,7 +25,7 @@ export function HeroSection({
     <section className="relative flex flex-col items-center justify-center pt-8 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
       <div className="mb-6 inline-flex items-center rounded-full border border-surface-border bg-surface-secondary/80 px-4 py-1.5 backdrop-blur-md">
         <AnimatedShinyText className="text-xs font-medium font-mono text-brand-primary">
-          BNB Chain Hackathon 2026 • AI Agents Track
+          AI-Powered Code Verification
         </AnimatedShinyText>
       </div>
 
@@ -33,7 +33,7 @@ export function HeroSection({
         <h1 className="text-4xl sm:text-6xl font-bold tracking-tight text-content-primary leading-[1.1] mb-6">
           Autonomous GitHub PR Auditor &{" "}
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary via-yellow-200 to-amber-500">
-            Milestone Escrow
+            Code-Gated Escrow
           </span>
         </h1>
         <p className="text-base sm:text-lg text-content-secondary max-w-2xl mx-auto leading-relaxed">
