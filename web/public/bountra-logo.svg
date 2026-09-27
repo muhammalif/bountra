@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Background subtle dark gradient -->
+    <radialGradient id="bgGlow" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+      <stop offset="0%" stop-color="#1E232F" />
+      <stop offset="100%" stop-color="#0B0E14" />
+    </radialGradient>
+
+    <!-- BNB Cyber Gold Linear Gradient -->
+    <linearGradient id="bnbGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FCD535" />
+      <stop offset="50%" stop-color="#F0B90B" />
+      <stop offset="100%" stop-color="#D99E05" />
+    </linearGradient>
+
+    <!-- Chrome / Steel Gradient for the developer Git spine -->
+    <linearGradient id="cyberSteel" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#8F9CAE" />
+    </linearGradient>
+
+    <!-- Soft Drop Shadow for Depth -->
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.6" />
+    </filter>
+
+    <!-- Glow Effect for BNB Gold -->
+    <filter id="goldGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Canvas Background -->
+  <rect width="512" height="512" rx="128" fill="url(#bgGlow)" />
+  <rect width="508" height="508" x="2" y="2" rx="126" fill="none" stroke="#2B313F" stroke-width="2" />
+
+  <!-- LOGO MARK: MONOGRAM B-CHAIN GATE -->
+  <g filter="url(#shadow)">
+    <!-- 1. LEFT PILLAR (Git Commit Spine & Nodes) -->
+    <!-- Solid Vertical Bar -->
+    <rect x="130" y="120" width="44" height="272" rx="12" fill="url(#cyberSteel)" />
+
+    <!-- Commit Notch details -->
+    <circle cx="152" cy="156" r="8" fill="#0B0E14" />
+    <circle cx="152" cy="256" r="8" fill="#F0B90B" />
+    <circle cx="152" cy="356" r="8" fill="#0B0E14" />
+
+    <!-- 2. UPPER LOOP: Terminal Code Angle (>) -->
+    <path
+      d="M174 120 H284 C330 120 366 152 366 196 C366 232 338 262 298 268 L284 270 H174 V226 H276 C296 226 314 212 314 194 C314 176 296 164 276 164 H174 V120 Z"
+      fill="url(#cyberSteel)"
+    />
+
+    <!-- Upper Terminal Prompt Accent Inside (>) -->
+    <path
+      d="M210 178 L232 194 L210 210"
+      fill="none"
+      stroke="#F0B90B"
+      stroke-width="7"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+
+    <!-- 3. LOWER LOOP: BNB Chain Vault Link (Escrow Gate) -->
+    <path
+      d="M174 250 H298 C346 250 384 286 384 334 C384 382 344 416 296 416 H174 C161 416 150 405 150 392 V372 H174 V372 H292 C318 372 336 356 336 333 C336 310 318 294 292 294 H174 V250 Z"
+      fill="url(#bnbGold)"
+      filter="url(#goldGlow)"
+    />
+
+    <!-- BNB Diamond in the center intersection -->
+    <polygon points="232,298 244,310 232,322 220,310" fill="#0B0E14" />
+    <polygon points="268,298 280,310 268,322 256,310" fill="#0B0E14" />
+  </g>
+</svg>

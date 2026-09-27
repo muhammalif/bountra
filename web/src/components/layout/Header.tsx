@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { usePrivy } from "@privy-io/react-auth";
@@ -25,9 +26,15 @@ export function Header() {
     <header className="border-b border-surface-border bg-surface-secondary/80 backdrop-blur-md sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-9 h-9 rounded-lg bg-brand-primary flex items-center justify-center font-bold text-black text-lg transition-transform group-hover:scale-105">
-              B
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="relative w-8 h-8 rounded-lg overflow-hidden bg-black border border-surface-border transition-transform group-hover:scale-105 shrink-0">
+              <Image
+                src="/bountra-logo.png"
+                alt="Bountra Logo"
+                fill
+                className="object-cover p-1"
+                priority
+              />
             </div>
             <div className="flex items-center gap-2">
               <span className="font-bold text-lg tracking-tight text-content-primary">BOUNTRA</span>
