@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { usePrivy } from "@privy-io/react-auth";
-import { useAccount } from "wagmi";
+import { useAccount, useDisconnect } from "wagmi";
 import { LogIn, LogOut, Github, Compass, LayoutDashboard, Terminal } from "lucide-react";
 import { formatAddress } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -12,9 +12,24 @@ import { cn } from "@/lib/utils";
 export function Header() {
   const pathname = usePathname();
   const { ready, authenticated, user, login, logout } = usePrivy();
-  const { address } = useAccount();
+  const { address, isConnected } = useAccount();
+  const { disconnect } = useDisconnect();
 
   const activeAddress = user?.wallet?.address || address;
+  const isLoggedIn = Boolean((ready && authenticated) || (isConnected && address));
+
+  const handleLogout = async () => {
+    try {
+      if (authenticated) {
+        await logout();
+      }
+      if (isConnected) {
+        disconnect();
+      }
+    } catch (e) {
+      console.error("Logout error:", e);
+    }
+  };
 
   const navLinks = [
     { href: "/", label: "Home", icon: Terminal },
@@ -86,7 +101,7 @@ export function Header() {
             </Link>
           </nav>
 
-          {ready && authenticated ? (
+          {isLoggedIn ? (
             <div className="flex items-center gap-3">
               <div className="hidden sm:flex flex-col text-right">
                 <span className="text-xs text-content-secondary font-mono flex items-center justify-end gap-1">
@@ -98,7 +113,8 @@ export function Header() {
                 </span>
               </div>
               <button
-                onClick={logout}
+                type="button"
+                onClick={handleLogout}
                 className="px-3 py-1.5 rounded-lg border border-surface-border bg-surface-tertiary text-content-secondary hover:text-content-primary hover:border-brand-primary/50 text-xs font-medium flex items-center gap-1.5 transition-colors"
               >
                 <LogOut className="w-3.5 h-3.5" />

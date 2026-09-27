@@ -54,7 +54,7 @@ export default function DashboardPage() {
     );
   }, []);
 
-  const isUserLoggedIn = Boolean(isConnected || authenticated);
+  const isUserLoggedIn = Boolean((ready && authenticated) || (isConnected && Boolean(address)));
 
   return (
     <div className="min-h-screen bg-surface-primary text-content-primary flex flex-col font-sans selection:bg-brand-primary/20 selection:text-brand-primary">
