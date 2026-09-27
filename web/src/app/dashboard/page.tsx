@@ -66,21 +66,21 @@ export default function DashboardPage() {
             <div className="h-16 w-16 rounded-2xl bg-brand-primary/10 border border-brand-primary/30 flex items-center justify-center text-brand-primary mb-6">
               <LogIn className="h-8 w-8" />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-content-primary mb-2">
-              Connect to Access Workspace
-            </h1>
-            <p className="text-xs sm:text-sm text-content-secondary leading-relaxed mb-6">
-              Sign in with your GitHub account or Web3 wallet to manage escrow deposits, review verified code PRs, and process on-chain developer payouts.
-            </p>
-            <button
-              type="button"
-              onClick={() => login()}
-              disabled={!ready}
-              className="px-6 py-3 rounded-lg bg-brand-primary text-black font-semibold text-xs sm:text-sm hover:bg-brand-hover transition-colors flex items-center gap-2 shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
-            >
-              <span>{ready ? "Connect Wallet / Sign In with GitHub" : "Connecting..."}</span>
-              <ArrowRight className="h-4 w-4" />
-            </button>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-content-primary">
+                Connect to Access Workspace
+              </h1>
+              <p className="text-xs sm:text-sm text-content-secondary leading-relaxed mb-6">
+                Sign in with your Web3 wallet to manage escrow deposits, review audit verdicts, and claim developer payouts.
+              </p>
+              <button
+                type="button"
+                onClick={() => login()}
+                disabled={!ready}
+                className="px-6 py-3 rounded-lg bg-brand-primary text-black font-semibold text-xs sm:text-sm hover:bg-brand-hover transition-colors flex items-center gap-2 shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                <ArrowRight className="h-4 w-4" />
+                <span>{ready ? "Connect Wallet" : "Connecting..."}</span>
+              </button>
           </div>
         ) : (
           <div>

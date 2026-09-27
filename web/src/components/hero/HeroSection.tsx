@@ -25,7 +25,7 @@ export function HeroSection({
     <section className="relative flex flex-col items-center justify-center pt-8 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
       <div className="mb-6 inline-flex items-center rounded-full border border-surface-border bg-surface-secondary/80 px-4 py-1.5 backdrop-blur-md">
         <AnimatedShinyText className="text-xs font-medium font-mono text-brand-primary">
-          AI-Powered Code Verification
+          Automated 5-Layer PR Audit
         </AnimatedShinyText>
       </div>
 
@@ -66,7 +66,7 @@ export function HeroSection({
             className="px-5 py-2.5 rounded-lg border border-surface-border bg-surface-secondary text-content-primary font-semibold text-sm hover:border-brand-primary/50 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
           >
             <PlusCircle className="w-4 h-4 text-brand-primary" />
-            <span>{ready ? "Sign In with GitHub to Create" : "Connecting..."}</span>
+            <span>Sign In to Create</span>
           </button>
         )}
       </div>
@@ -99,11 +99,11 @@ export function HeroSection({
             <span className="text-xs font-mono text-content-secondary uppercase">Audit Latency</span>
             <Zap className="w-4 h-4 text-status-warning" />
           </div>
-          <div className="text-xl font-bold font-mono text-content-primary mb-1">
+          <div className="font-mono text-sm font-semibold text-content-primary truncate mb-1">
             &lt; 15s Avg
           </div>
           <span className="text-xs text-content-secondary">
-            Bountra Agent Fast Review
+            PR diff to payout
           </span>
         </div>
 
@@ -112,11 +112,11 @@ export function HeroSection({
             <span className="text-xs font-mono text-content-secondary uppercase">Active Escrows</span>
             <ShieldCheck className="w-4 h-4 text-status-success" />
           </div>
-          <div className="text-xl font-bold font-mono text-content-primary mb-1">
+          <div className="font-mono text-sm font-semibold text-content-primary truncate mb-1">
             {bountyCount !== undefined ? String(bountyCount) : "0"} Escrows
           </div>
           <span className="text-xs text-status-success font-mono">
-            5-Layer Security Protected
+            5-layer audit per PR
           </span>
         </div>
       </div>

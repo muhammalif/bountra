@@ -35,13 +35,13 @@ export function DashboardHeader({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <span className="font-mono text-xs uppercase tracking-wider font-semibold text-brand-primary mb-1 block">
-            Bountra Account & Escrow Portal
+            Bountra Workspace
           </span>
           <h1 className="text-3xl font-bold tracking-tight text-content-primary">
-            User Workspace
+            User Dashboard
           </h1>
           <p className="mt-1 text-xs text-content-secondary max-w-xl leading-relaxed">
-            Manage your deposited bounty escrows, claim refunds for expired tasks, and view your verified AI audit payout history.
+            Manage your escrow deposits, claim refunds for expired tasks, and view your payout history.
           </p>
         </div>
 

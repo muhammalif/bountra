@@ -48,13 +48,13 @@ export default function HomePage() {
             <div>
               <div className="flex items-center gap-2 text-brand-primary mb-1">
                 <Compass className="h-4 w-4" />
-                <span className="font-mono text-xs uppercase tracking-wider font-semibold">Live Ecosystem</span>
+                <span className="font-mono text-xs uppercase tracking-wider font-semibold">Active Bounties</span>
               </div>
               <h2 className="text-2xl font-bold tracking-tight text-content-primary">
                 Featured Bounty Escrows
               </h2>
               <p className="mt-1 text-xs text-content-secondary max-w-lg">
-                Explore real code bounties currently funded on BSC Testnet. Solve the issue, submit a PR, and get paid instantly.
+                Explore real code bounties currently funded on BSC Testnet. Solve the issue, submit a PR, and claim your reward.
               </p>
             </div>
 
@@ -62,7 +62,7 @@ export default function HomePage() {
               href="/explore"
               className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-brand-primary hover:text-brand-hover hover:underline"
             >
-              <span>View All Bounties on Directory</span>
+              <span>View All Bounties</span>
               <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>

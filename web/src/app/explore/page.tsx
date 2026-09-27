@@ -84,13 +84,13 @@ export default function ExplorePage() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-surface-border pb-8 mb-8">
           <div>
             <span className="font-mono text-xs uppercase tracking-wider font-semibold text-brand-primary mb-2 block">
-              Decentralized Code Escrow Directory
+              Code Bounty Directory
             </span>
             <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-content-primary">
               Explore Active Bounties
             </h1>
             <p className="mt-2 text-sm text-content-secondary max-w-2xl leading-relaxed">
-              Find open GitHub issues with funds locked on BNB Chain. Submit high-quality PRs, pass 5-layer Bountra Agent automated security review, and claim rewards instantly.
+              Find open GitHub issues with funds locked on BNB Chain. Submit PRs, pass the 5-layer Bountra Agent automated audit, and claim your reward.
             </p>
           </div>
 
@@ -134,14 +134,14 @@ export default function ExplorePage() {
 
           <div className="p-4 rounded-xl border border-surface-border bg-surface-secondary/60">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-mono uppercase text-content-muted">Autonomous Settlement</span>
+              <span className="text-[10px] font-mono uppercase text-content-muted">Settlement Speed</span>
               <Zap className="h-4 w-4 text-status-warning" />
             </div>
-            <div className="font-mono text-xl font-bold text-content-primary">
+            <div className="font-mono text-xl font-bold text-content-primary mb-1">
               &lt; 15s Latency
             </div>
             <span className="text-[10px] font-mono text-content-secondary">
-              ECDSA verification on-chain
+              ECDSA verification on BSC
             </span>
           </div>
         </div>
