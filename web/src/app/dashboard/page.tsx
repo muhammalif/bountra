@@ -121,6 +121,7 @@ export default function DashboardPage() {
       <ClaimBountyDrawer
         bounty={selectedBountyForClaim}
         isOpen={Boolean(selectedBountyForClaim)}
+        mode="claim"
         onClose={() => setSelectedBountyForClaim(null)}
         onSuccess={() => setSelectedBountyForClaim(null)}
       />

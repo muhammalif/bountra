@@ -15,13 +15,15 @@ interface ClaimBountyDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  mode?: "public" | "claim";
 }
 
 export function ClaimBountyDrawer({
   bounty,
   isOpen,
   onClose,
-  onSuccess
+  onSuccess,
+  mode = "public"
 }: ClaimBountyDrawerProps) {
   const { address: wagmiAddress, isConnected } = useAccount();
   const { user, authenticated } = usePrivy();
@@ -214,68 +216,162 @@ export function ClaimBountyDrawer({
     );
   };
 
-  // ─── Ready to Claim: Public view shows Passed Audit Verdict & Claimant Info ───
-  const renderReadyToClaimContent = () => (
-    <div className="space-y-4">
-      {renderBountyMeta()}
+  // ─── Ready to Claim: Public vs Developer Claim View ───
+  const renderReadyToClaimContent = () => {
+    if (mode === "claim") {
+      return (
+        <div className="space-y-4">
+          {renderBountyMeta()}
 
-      <div className="p-4 rounded-xl border border-brand-primary/30 bg-brand-primary/10">
-        <div className="flex items-start gap-3">
-          <Sparkles className="h-8 w-8 text-brand-primary shrink-0" />
-          <div>
-            <h4 className="text-sm font-semibold text-brand-primary mb-1">
-              Autonomous Audit Passed (Score: 96/100)
-            </h4>
-            <p className="text-xs text-content-secondary leading-relaxed">
-              Bountra Agent has completed all 5 security verification layers and generated cryptographic authorization. Awaiting on-chain settlement by the developer in their Developer Hub.
-            </p>
+          <div className="p-4 rounded-xl border border-brand-primary/30 bg-brand-primary/10">
+            <div className="flex items-start gap-3">
+              <Sparkles className="h-6 w-6 text-brand-primary shrink-0" />
+              <div>
+                <h4 className="text-xs font-semibold text-brand-primary mb-0.5">
+                  Audit Passed (Score: 96/100) — Claim Authorization Ready
+                </h4>
+                <p className="text-[11px] text-content-secondary leading-relaxed">
+                  Bountra Agent has signed your submission. Review the claim parameters below and execute on-chain settlement to receive {bounty.amountFormatted} {bounty.tokenSymbol}.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs font-mono font-medium text-content-secondary mb-1">
+                Claimant Wallet (Beneficiary)
+              </label>
+              <input
+                type="text"
+                disabled
+                value={address || "Please connect wallet"}
+                className="w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2 text-xs font-mono text-content-muted"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-mono font-medium text-content-secondary mb-1">
+                GitHub Pull Request URL
+              </label>
+              <input
+                type="url"
+                value={prUrl}
+                onChange={(e) => setPrUrl(e.target.value)}
+                placeholder="https://github.com/bountra/core-contracts/pull/43"
+                className="w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2 text-xs font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-mono font-medium text-content-secondary mb-1">
+                Audited Commit Hash
+              </label>
+              <input
+                type="text"
+                value={commitHash}
+                onChange={(e) => setCommitHash(e.target.value)}
+                placeholder="0x..."
+                className="w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2 text-xs font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-mono font-medium text-content-secondary">
+                  Bountra Agent Cryptographic Signature
+                </label>
+                <button
+                  type="button"
+                  onClick={handleAutofillDemoProof}
+                  className="text-[10px] font-mono text-brand-primary hover:underline hover:text-brand-hover inline-flex items-center gap-1"
+                >
+                  <Zap className="h-3 w-3" />
+                  <span>Autofill test signature</span>
+                </button>
+              </div>
+              <textarea
+                rows={3}
+                value={signature}
+                onChange={(e) => setSignature(e.target.value)}
+                placeholder="0x... (65-byte ECDSA signature signed by agent 0x2e10...)"
+                className="w-full rounded-lg border border-surface-border bg-surface-primary p-2.5 text-[11px] font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none resize-none"
+              />
+            </div>
+
+            {errorMsg && (
+              <div className="p-3 rounded-lg border border-status-danger/30 bg-red-950/20 text-xs text-status-danger font-mono flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
           </div>
         </div>
-      </div>
+      );
+    }
 
-      <div className="rounded-lg border border-surface-border bg-surface-primary p-3 space-y-2 font-mono text-xs">
-        <div className="flex justify-between text-content-muted">
-          <span>Authorized Developer:</span>
-          <span className="text-content-primary">{formatAddress("0xA116aBe137640B3C62Aa6b4Be08e79E07d664f13")}</span>
-        </div>
-        <div className="flex justify-between text-content-muted">
-          <span>Escrow Payout:</span>
-          <span className="text-brand-primary font-bold">{bounty.amountFormatted} {bounty.tokenSymbol}</span>
-        </div>
-        <div className="flex justify-between text-content-muted">
-          <span>Cryptographic Proof:</span>
-          <span className="text-status-success font-semibold">ECDSA Signature Ready</span>
-        </div>
-      </div>
+    return (
+      <div className="space-y-4">
+        {renderBountyMeta()}
 
-      <div className="space-y-2">
-        <h4 className="text-xs font-mono font-semibold text-content-primary uppercase">Audit Verification Checklist</h4>
-        {[
-          "1. CI Status Gate — Passed",
-          "2. Test Immutability Check — Passed (Zero tampering)",
-          "3. Anti-Prompt Injection Scan — Clean",
-          "4. Static Analysis (AST) — Zero Critical Vulnerabilities",
-          "5. Bountra Agent Evaluation — Score 96/100 (Pass)",
-        ].map((step, idx) => (
-          <div key={idx} className="flex items-center gap-2 p-2 rounded-lg border border-surface-border bg-surface-primary">
-            <CheckCircle2 className="h-3.5 w-3.5 text-status-success shrink-0" />
-            <span className="font-mono text-xs text-content-primary">{step}</span>
+        <div className="p-4 rounded-xl border border-brand-primary/30 bg-brand-primary/10">
+          <div className="flex items-start gap-3">
+            <Sparkles className="h-8 w-8 text-brand-primary shrink-0" />
+            <div>
+              <h4 className="text-sm font-semibold text-brand-primary mb-1">
+                Autonomous Audit Passed (Score: 96/100)
+              </h4>
+              <p className="text-xs text-content-secondary leading-relaxed">
+                Bountra Agent has completed all 5 security verification layers and generated cryptographic authorization. Awaiting on-chain settlement by the developer in their Developer Hub.
+              </p>
+            </div>
           </div>
-        ))}
-      </div>
+        </div>
 
-      <div className="p-3 rounded-lg border border-dashed border-surface-border bg-surface-primary/40 text-[11px] text-content-muted flex items-center justify-between">
-        <span>Are you the developer who submitted this PR?</span>
-        <a
-          href="/dashboard"
-          className="text-brand-primary font-mono font-semibold hover:underline inline-flex items-center gap-1"
-        >
-          <span>Claim in Developer Hub</span>
-          <ArrowRight className="h-3 w-3" />
-        </a>
+        <div className="rounded-lg border border-surface-border bg-surface-primary p-3 space-y-2 font-mono text-xs">
+          <div className="flex justify-between text-content-muted">
+            <span>Authorized Developer:</span>
+            <span className="text-content-primary">{formatAddress("0xA116aBe137640B3C62Aa6b4Be08e79E07d664f13")}</span>
+          </div>
+          <div className="flex justify-between text-content-muted">
+            <span>Escrow Payout:</span>
+            <span className="text-brand-primary font-bold">{bounty.amountFormatted} {bounty.tokenSymbol}</span>
+          </div>
+          <div className="flex justify-between text-content-muted">
+            <span>Cryptographic Proof:</span>
+            <span className="text-status-success font-semibold">ECDSA Signature Ready</span>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <h4 className="text-xs font-mono font-semibold text-content-primary uppercase">Audit Verification Checklist</h4>
+          {[
+            "1. CI Status Gate — Passed",
+            "2. Test Immutability Check — Passed (Zero tampering)",
+            "3. Anti-Prompt Injection Scan — Clean",
+            "4. Static Analysis (AST) — Zero Critical Vulnerabilities",
+            "5. Bountra Agent Evaluation — Score 96/100 (Pass)",
+          ].map((step, idx) => (
+            <div key={idx} className="flex items-center gap-2 p-2 rounded-lg border border-surface-border bg-surface-primary">
+              <CheckCircle2 className="h-3.5 w-3.5 text-status-success shrink-0" />
+              <span className="font-mono text-xs text-content-primary">{step}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="p-3 rounded-lg border border-dashed border-surface-border bg-surface-primary/40 text-[11px] text-content-muted flex items-center justify-between">
+          <span>Are you the developer who submitted this PR?</span>
+          <a
+            href="/dashboard"
+            className="text-brand-primary font-mono font-semibold hover:underline inline-flex items-center gap-1"
+          >
+            <span>Claim in Developer Hub</span>
+            <ArrowRight className="h-3 w-3" />
+          </a>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // ─── In Review: read-only audit progress view ───
   const renderInReviewContent = () => (
@@ -533,8 +629,35 @@ export function ClaimBountyDrawer({
             )}
           </div>
 
-          {/* Close button */}
-          {!isClaimSuccess && (
+          {/* Action buttons — for developer claim mode */}
+          {!isClaimSuccess && mode === "claim" && (
+            <div className="pt-4 border-t border-surface-border flex flex-col gap-2">
+              <button
+                onClick={handleClaim}
+                disabled={!isWalletActive || isClaimPending || isClaimConfirming || bounty.claimed}
+                className="w-full flex items-center justify-center gap-2 rounded-lg bg-brand-primary text-black font-semibold text-xs py-2.5 hover:bg-brand-hover transition-colors disabled:opacity-50"
+              >
+                {isClaimPending || isClaimConfirming ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <span>Executing Escrow Claim on BSC Testnet...</span>
+                  </>
+                ) : (
+                  <span>Claim {bounty.amountFormatted} {bounty.tokenSymbol} Now</span>
+                )}
+              </button>
+
+              <button
+                onClick={resetAll}
+                className="w-full rounded-lg border border-surface-border bg-surface-tertiary text-content-secondary font-medium text-xs py-2 hover:bg-surface-primary hover:text-content-primary transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+
+          {/* Close button for public modes */}
+          {!isClaimSuccess && mode !== "claim" && (
             <div className="pt-4 border-t border-surface-border">
               <button
                 onClick={resetAll}
