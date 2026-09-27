@@ -187,7 +187,7 @@ Related: [[_MOC/Index|Knowledge Map]] · [[Projects/BNB Hackathon 2026 - Project
 
 ### Sprint H3: Frontend Dashboard & Live Demo (Day 3 - In Progress)
 * [x] **H3.1:** Setup Next.js 14 App Router + Privy Auth & Embedded Wallet + Wagmi + Tailwind CSS + dark theme.
-* [x] **H3.2:** Hero Section (Magic UI Animated Beam: GitHub PR $\rightarrow$ Gemini AI $\rightarrow$ BNB Escrow, Anti-Slop Dials ENERGY 2 / RHYTHM 2 / MOTION 2).
+* [x] **H3.2:** Hero Section (Magic UI Animated Beam: GitHub PR $\rightarrow$ Bountra Agent $\rightarrow$ BNB Escrow, Anti-Slop Dials ENERGY 2 / RHYTHM 2 / MOTION 2).
 * [x] **H3.3:** Live Audit Terminal Viewer (Real-time evaluation log streaming, 5-layer pipeline tracker, 3-scenario interactive simulator).
 * [x] **H3.4A:** Bounty Explorer Page (`/explore`) — Katalog Grid Bounty, Search, Filter Tabs, integrasi `CreateBountyModal` on-chain deposit, dan on-chain priority display.
 * [x] **H3.4B:** User Dashboard (`/dashboard`) — Portal Sponsor Escrow Manager (refund expired), Developer Hub Claims, dan slide-over `ClaimBountyDrawer` dengan mode pemisahan hak akses publik vs developer claim.

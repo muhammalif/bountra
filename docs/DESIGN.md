@@ -68,7 +68,7 @@
 | `HackathonBadge` | Shimmer pill badge with subtle glow animation | Magic UI `AnimatedShinyText` |
 | `HeroHeading` | 2-line bold + gradient text on key phrase | Tailwind `bg-gradient-to-r` + `bg-clip-text` |
 | `HeroActions` | Primary (solid yellow) + Secondary (ghost/outline) buttons | shadcn/ui `Button` variants |
-| `PipelineBeam` | 3-node animated beam (GitHub → Gemini → BNB) | Magic UI `AnimatedBeam` |
+| `PipelineBeam` | 3-node animated beam (GitHub → Bountra Agent → BNB) | Magic UI `AnimatedBeam` |
 | `TechTicker` | Horizontal logo strip with hover tooltip | Tailwind flex + grayscale filter |
 
 ### B. Live Audit Terminal
