@@ -7,7 +7,7 @@
 
 * **Target Duration:** 3:00 – 3:30 Minutes
 * **Format:** Screen Recording + Voiceover / Subtitles (Clean Dark Mode UI)
-* **Goal:** Demonstrate that Bountra solves real grant/bounty friction by combining Gemini 2.0 Flash AI agent code auditing with cryptographic ECDSA attestation and on-chain BNB smart contract settlement.
+* **Goal:** Demonstrate that Bountra solves real grant/bounty friction by combining autonomous Bountra Agent code auditing with cryptographic ECDSA attestation and on-chain BNB smart contract settlement.
 
 ---
 
@@ -27,7 +27,7 @@
 * **Visual:**
   * Open Bountra Web App (`http://localhost:3000`).
   * Show Header: BNB Testnet badge, Privy GitHub Social Login.
-  * Show **Magic UI Animated Beam** in Hero section connecting GitHub PR $\rightarrow$ Gemini 2.0 Flash $\rightarrow$ BNB Escrow Vault.
+  * Show **Magic UI Animated Beam** in Hero section connecting GitHub PR $\rightarrow$ Bountra Agent $\rightarrow$ BNB Escrow Vault.
   * Scroll down to **Live Audit Terminal Viewer**:
     * Switch between scenarios:
       1. *Scenario 1: Clean Approved PR (Score: 94/100, All 5 gates passed)*
@@ -39,7 +39,7 @@
   > First, GitHub HMAC signature validation.
   > Second, Hard CI Gate from GitHub Actions.
   > Third, Anti-Tamper inspection preventing developers from bypassing tests.
-  > Fourth, XML-sandboxed semantic code auditing via Gemini 2.0 Flash.
+  > Fourth, XML-sandboxed semantic code auditing by the Bountra Agent.
   > And fifth, an on-chain verifiable ECDSA cryptographic signature that can never be faked or replayed."
 
 ---
@@ -76,7 +76,7 @@
 * **Visual:**
   * Navigate to `/dashboard`.
   * Show **Sponsor Hub**: Track total TVL locked, active bounties, and the active **Refund Escrow** button for expired tasks.
-  * Switch to **Developer Hub**: View historical audits, Gemini scores, and verified payout transactions.
+  * Switch to **Developer Hub**: View historical audits, Bountra Agent scores, and verified payout transactions.
 * **Voiceover:**
   > "In the User Dashboard, project owners monitor active bounties with zero counterparty risk. If a bounty expires without a qualifying PR, the sponsor reclaims their deposit with one click. Developers keep a transparent, on-chain record of their contributions and earnings."
 
@@ -85,7 +85,7 @@
 ### Scene 6: Conclusion & Impact on BNB Ecosystem (3:10 – 3:30)
 * **Visual:**
   * Return to hero overview showing live stats.
-  * Display tech stack badges: *BNB Chain • Gemini 2.0 Flash • Foundry • Fastify • Next.js 14 • Privy*.
+  * Display tech stack badges: *BNB Chain • Bountra Agent • Foundry • Fastify • Next.js 14 • Privy*.
 * **Voiceover:**
   > "By eliminating manual review friction and securing milestone escrow with autonomous AI attestation, Bountra accelerates open-source development across the BNB Chain ecosystem.
   > Autonomous. Code-gated. Cryptographically verified.

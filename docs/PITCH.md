@@ -33,7 +33,7 @@ Bountra bridges GitHub repositories with BNB Smart Chain smart contracts through
    * **Gate 1: HMAC Webhook Authentication:** Ensures payloads genuinely originate from GitHub.
    * **Gate 2: CI Hard Gate:** Rejects PR immediately if GitHub Actions tests fail.
    * **Gate 3: Anti-Tamper Test Suite Check:** Compares git diffs to detect weakening of existing assertions or test deletions.
-   * **Gate 4: Semantic AI Evaluation (Gemini 2.0 Flash):** Evaluates implementation quality against issue requirements inside an isolated XML sandbox (`<untrusted_diff>`).
+   * **Gate 4: Bountra Agent Semantic Evaluation:** Evaluates implementation quality against issue requirements inside an isolated XML sandbox (`<untrusted_diff>`).
    * **Gate 5: ECDSA Cryptographic Attestation:** If approved, the agent signs a cryptographic proof with its private key binding `keccak256(bountyId, devWallet, commitHash, prUrl)`.
 3. **Instant Settlement:** The developer calls `claimBounty()` on BNB Chain with the agent's signature. The smart contract validates `ecrecover` on-chain and transfers tokens immediately.
 
@@ -53,7 +53,7 @@ Bountra bridges GitHub repositories with BNB Smart Chain smart contracts through
    │  Layer 1: HMAC Verify                                  │
    │  Layer 2: CI Status Hard Gate                          │
    │  Layer 3: Test Diff Anti-Tampering Gate                │
-   │  Layer 4: Gemini 2.0 Flash AST & XML Sandboxed Audit   │
+   │  Layer 4: Bountra Agent AST & XML Sandboxed Audit      │
    │  Layer 5: ECDSA Viem Signer (Keccak256 Proof)          │
    └───────────────────────────┬────────────────────────────┘
                                │ ECDSA Signature
@@ -79,7 +79,7 @@ Bountra bridges GitHub repositories with BNB Smart Chain smart contracts through
 * **Multi-Page Web3 dApp:**
   * **Landing Page (`/`):** Hero pipeline visualizer, live 5-layer macOS terminal simulator (clean PR, test tampering, prompt injection), and featured bounties teaser.
   * **Bounty Explorer (`/explore`):** Interactive directory with search, status filters (*Open*, *In Review*, *Claimed*), on-chain deposit modal (`CreateBountyModal`), and slide-over claim drawer (`ClaimBountyDrawer`).
-  * **User Dashboard (`/dashboard`):** Sponsor Escrow Management with deadline-based 100% refund capability (`cancelBounty`) and Developer Claims tracker with Gemini audit logs.
+  * **User Dashboard (`/dashboard`):** Sponsor Escrow Management with deadline-based 100% refund capability (`cancelBounty`) and Developer Claims tracker with Bountra Agent audit logs.
 * **Resilient Security Design:**
   * Zero prompt injection risk: untrusted code isolated in strict XML delimiters with hardened system instructions.
   * Replay attack prevention: hash binding on `(bountyId, devWallet, commitHash, prUrl)` prevents reusing signatures.

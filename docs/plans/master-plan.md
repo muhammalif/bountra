@@ -198,12 +198,17 @@ Related: [[_MOC/Index|Knowledge Map]] · [[Projects/BNB Hackathon 2026 - Project
   * Pemisahan UX etalase publik (`/explore` view-only audit verdict) vs eksekusi privat (`/dashboard` Developer Hub untuk on-chain wallet claim).
   * Standarisasi branding layer audit otonom: **Bountra Agent**.
   * Sinkronisasi otentikasi Privy + Wagmi (auto-lock dashboard saat unconnect, dropdown wallet pill dengan tombol copy & clean disconnect).
+* [x] **H3.7 (Copy & Terminal Hardening):**
+  * Audit copywriting seluruh landing page, Explore, dan Dashboard dengan skill `antislop-copywriting` — 16 perbaikan (buang `AI-Powered`, `instantly`, `high-quality`, `ecosystem`, `Decentralized`, `Portal`).
+  * Penyatuan tag Layer 4 di Live Audit Terminal: `GEMINI_EVAL` → `AGENT_EVAL`, teks `Evaluation complete.` → `Semantic audit complete.`
+  * Provider LLM (`Gemini`) dihapus total dari UI publik; `grep -r GEMINI web/src` = 0 hasil.
 
 ---
 
 ## 8. Status Progress
 
-* **Status Proyek:** 🟢 `completed & polished` (Seluruh Sprint H0, H1, H2, H3.1–H3.6 Selesai 100%)
+* **Status Proyek:** 🟢 `completed & polished` (Seluruh Sprint H0, H1, H2, H3.1–H3.7 Selesai 100%)
+* **Customer-Facing Branding:** Auditor = **Bountra Agent** (pipeline tracker, live terminal, report 5-layer). `Gemini 2.0 Flash` = detail provider backend, tidak tampil di UI publik.
 * **Deployed Smart Contract:**
   * **Network:** BSC Testnet (Chain ID `97`)
   * **Contract Address:** `0xbe576879961Bd8cdf7CfA72F146C8a3E352c7260` (TVL Terkunci: 800 USDT di 4 bounty on-chain #0..#3)
