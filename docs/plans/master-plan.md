@@ -1,10 +1,10 @@
 ---
 title: Bountra - Master Plan
 created: 2026-09-21
-updated: 2026-09-22
+updated: 2026-09-27
 source: telegram
 tags: [project, web3, hackathon, ai-agent, bnb-chain, bountra]
-status: in-progress (H0 ideation & naming done)
+status: completed (H0-H3 complete, UI polished, production-ready)
 track: [AI Agents, Finance & Commerce]
 ---
 
@@ -189,19 +189,25 @@ Related: [[_MOC/Index|Knowledge Map]] · [[Projects/BNB Hackathon 2026 - Project
 * [x] **H3.1:** Setup Next.js 14 App Router + Privy Auth & Embedded Wallet + Wagmi + Tailwind CSS + dark theme.
 * [x] **H3.2:** Hero Section (Magic UI Animated Beam: GitHub PR $\rightarrow$ Gemini AI $\rightarrow$ BNB Escrow, Anti-Slop Dials ENERGY 2 / RHYTHM 2 / MOTION 2).
 * [x] **H3.3:** Live Audit Terminal Viewer (Real-time evaluation log streaming, 5-layer pipeline tracker, 3-scenario interactive simulator).
-* [x] **H3.4A:** Bounty Explorer Page (`/explore`) — Katalog Grid Bounty, Search, Filter Tabs, dan integrasi `CreateBountyModal` on-chain deposit.
-* [x] **H3.4B:** User Dashboard (`/dashboard`) — Portal Sponsor Escrow Manager (refund expired), Developer Claims history, dan slide-over `ClaimBountyDrawer`.
-* [x] **H3.4C:** Multi-Page Navigation & Landing Integration — Header/Navbar routing (`/`, `/explore`, `/dashboard`), Hero CTA routing, dan landing page teaser grid.
+* [x] **H3.4A:** Bounty Explorer Page (`/explore`) — Katalog Grid Bounty, Search, Filter Tabs, integrasi `CreateBountyModal` on-chain deposit, dan on-chain priority display.
+* [x] **H3.4B:** User Dashboard (`/dashboard`) — Portal Sponsor Escrow Manager (refund expired), Developer Hub Claims, dan slide-over `ClaimBountyDrawer` dengan mode pemisahan hak akses publik vs developer claim.
+* [x] **H3.4C:** Multi-Page Navigation & Landing Integration — Header/Navbar routing (`/`, `/explore`, `/dashboard`), Hero CTA routing, landing page teaser grid, dan sinkronisasi copy *"Autonomous GitHub PR Auditor & Code-Gated Escrow"*.
 * [x] **H3.5:** End-to-End Demo Recording & Pitch Submission — Master README, Demo Video Walkthrough Script (`docs/DEMO_SCRIPT.md`), dan Submission Pitch Kit (`docs/PITCH.md`).
+* [x] **H3.6 (Hardening & UI Polish):**
+  * Integrasi logo minimalis Monogram B-Node geometris di Header, Favicon, dan Footer.
+  * Pemisahan UX etalase publik (`/explore` view-only audit verdict) vs eksekusi privat (`/dashboard` Developer Hub untuk on-chain wallet claim).
+  * Standarisasi branding layer audit otonom: **Bountra Agent**.
+  * Sinkronisasi otentikasi Privy + Wagmi (auto-lock dashboard saat unconnect, dropdown wallet pill dengan tombol copy & clean disconnect).
 
 ---
 
 ## 8. Status Progress
 
-* **Status Proyek:** 🟢 `completed` (Seluruh Sprint H0, H1, H2, H3.1–H3.5 Selesai 100%)
+* **Status Proyek:** 🟢 `completed & polished` (Seluruh Sprint H0, H1, H2, H3.1–H3.6 Selesai 100%)
 * **Deployed Smart Contract:**
   * **Network:** BSC Testnet (Chain ID `97`)
-  * **Contract Address:** `0xbe576879961Bd8cdf7CfA72F146C8a3E352c7260`
+  * **Contract Address:** `0xbe576879961Bd8cdf7CfA72F146C8a3E352c7260` (TVL Terkunci: 800 USDT di 4 bounty on-chain #0..#3)
+  * **Mock USDT Address:** `0x189C7cA448e89DaF1C2A1C9a4DB4D9Ec475441c1` (Decimals: 18)
   * **Agent Signer:** `0x2e10F4a41F665c657Ff4deC4A780e8734A066848`
   * **Explorer:** [BscScan Testnet](https://testnet.bscscan.com/address/0xbe576879961Bd8cdf7CfA72F146C8a3E352c7260)
 * **Agent Backend Engine:** Fastify REST API + Viem Signer + Gemini 2.0 Flash + Drizzle SQLite (16/16 tests PASS).
