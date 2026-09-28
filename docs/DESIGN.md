@@ -141,3 +141,90 @@
 - Use action verbs. "Released" not "has been successfully processed."
 - Terminal output is raw and technical. No emojis in log lines (except status prefixes defined above).
 - Dashboard text is factual. No motivational language.
+
+---
+
+## 9. Mobile & Responsive Layout Specifications (antislop-layoutmobile)
+
+Governed by `antislop-layoutmobile` (R-03, R-05, R-35).
+**Core Rule:** Mobile layout is a distinct designed state, not desktop squeezed into a narrow viewport. Content must reflow: re-stack, rescale, and re-order with intent across the entire continuous width spectrum (320px to 1440px+).
+
+### 9.1 Breakpoint & Multi-State Strategy
+Layouts must define three deliberate states to prevent the "two-state layout" failure where tablets and small laptops inherit awkward stretched stacks or cramped grids:
+- **Compact Mobile (`< 640px` / `sm:`):** Single-column stacked layout, dense spacing register, touch-first ergonomics (44x44px min target).
+- **Tablet & Compact Desktop (`640px – 1023px` / `sm:` to `lg:`):** 2-column card layouts, balanced padding, intermediate type scale.
+- **Full Desktop (`>= 1024px` / `lg:`):** Multi-column grids (3-column cards, side-by-side terminal/data, full tabular views).
+
+### 9.2 Mobile Scale & Sizing Register
+- **Container Padding:** `px-4` on mobile (`< 640px`), expanding to `sm:px-6` and `lg:px-8`.
+- **Vertical Spacing:** Section padding reduced from desktop (`py-16` / `py-20`) to mobile register (`py-8` / `py-10`) to eliminate empty scroll voids.
+- **Viewport Height Hygiene:** Never lock hero or section containers to `100vh` on mobile (which causes content overflow and browser chrome collisions). Use `min-h-[calc(100dvh-4rem)]` or natural content height.
+- **Heading Scale:** Hero headings scale fluidly (`text-3xl` at mobile up to `sm:text-5xl` / `md:text-6xl` at desktop) with `leading-tight` to avoid headline wrapping collisions.
+
+### 9.3 Component Reflow Specifications
+
+#### A. Header & Mobile Navigation
+- **Issue:** Logo, navigation links, and Web3 wallet button collide or wrap awkwardly on 320px–375px screens.
+- **Reflow Rule:**
+  - On mobile (`< 768px`), shorten brand lockup to icon + compact text.
+  - Wallet button shrinks padding (`px-2.5 py-1.5`) and displays truncated address (`0x12...34`) or icon-only for secondary indicators.
+  - Primary links ("Explore", "Dashboard") remain directly accessible or collapse into a dedicated accessible mobile menu panel.
+  - Sticky nav height capped at `h-14` to prevent eating visible vertical screen real estate.
+
+#### B. Pipeline Visualizer (`PipelineVisualizer.tsx`)
+- **Issue:** 3-node horizontal beam layout and absolute badge ("Automated AI Escrow Pipeline") crowd and collide on narrow viewports.
+- **Reflow Rule:**
+  - Container padding steps down from `p-10` to `p-4 sm:p-6`.
+  - Nodes scale down from `w-16 h-16` to `w-12 h-12` on mobile, font sizes step from `text-xs` to `text-[10px]`.
+  - Absolute status badge relocates to a static stacked position below the nodes on `< 640px` to prevent overlapping node labels.
+
+#### C. Audit Terminal Window (`AuditTerminal.tsx` & `PipelineTracker.tsx`)
+- **Issue:** Window header has macOS traffic lights + 45-character session URL on left, and 3 tab buttons on right, forcing horizontal scroll or collision on mobile.
+- **Reflow Rule:**
+  - Header reflows to stacked 2-tier layout on mobile: Top tier holds traffic lights + truncated session ID (`bountra://session-43`); bottom tier holds the 3 view tabs with full touch targets (`py-1.5 px-3`).
+  - `PipelineTracker` horizontal stage list uses smooth touch drag (`overflow-x-auto scrollbar-none`) with visual edge gradient affordance indicating scrollable content.
+  - Monospace log text wraps cleanly with `break-all` and `min-w-0` on parent flex children to prevent horizontal layout leakage.
+
+#### D. Explorer Catalog & Filters (`explore/page.tsx` & `BountyFilter.tsx`)
+- **Issue:** Search input and sort select fight for width; filter tabs overflow without scroll clues.
+- **Reflow Rule:**
+  - Search bar and Sort dropdown stack vertically on mobile (`flex-col sm:flex-row`).
+  - Filter status pills maintain horizontal swipe with `whitespace-nowrap` and active pill visual prominence.
+  - Bounty cards utilize full width on mobile (`grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`).
+
+#### E. Dashboard Dual-Mode: Tables to Card List (`SponsorTab.tsx` & `DeveloperTab.tsx`)
+- **Issue:** HTML `<table>` elements cause horizontal clipping and push critical action buttons ("Claim Reward", "Refund Escrow") off-screen on mobile.
+- **Reflow Rule:**
+  - **Mobile (`block sm:hidden`):** Reflow table rows into dedicated mobile cards. Each card displays:
+    1. Header: Bounty ID + Status badge.
+    2. Body: Issue title & repository link.
+    3. Metrics: Amount (prominent yellow) + Deadline countdown.
+    4. Action: Full-width touch-friendly button (`h-10` / 44px min hit area).
+  - **Desktop (`hidden sm:table`):** Retain high-density tabular view with full columns.
+
+#### F. Modals & Drawers (`CreateBountyModal.tsx` & `ClaimBountyDrawer.tsx`)
+- **Issue:** Desktop modal exceeds mobile screen height when virtual keyboard appears; drawer reserves `pl-10` wasting 40px width on narrow screens.
+- **Reflow Rule:**
+  - `CreateBountyModal`: Enforce `max-h-[90dvh] overflow-y-auto w-full max-w-lg p-5 sm:p-6`. Inputs and labels maintain `text-sm` (16px equivalent font size during focus to prevent iOS Safari auto-zoom).
+  - `ClaimBountyDrawer`: Removes desktop inset margin on mobile (`pl-0 sm:pl-10`), expanding to full screen width (`w-full sm:max-w-md`) with sticky bottom action buttons.
+
+#### G. Footer (`Footer.tsx`)
+- **Issue:** Single-row flex container forces long copyright tagline to collide or wrap awkwardly.
+- **Reflow Rule:** Reflow to `flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left`.
+
+### 9.4 Tap Target & Ergonomics Hygiene
+- **Minimum Tap Size:** All interactive buttons, tabs, select dropdowns, and links must have a minimum bounding touch target of `44 x 44 px` (via visual size or padding hit-area).
+- **Target Spacing:** Minimum `8px` gap between adjacent interactive controls to prevent mis-taps.
+- **Touch State Feedback:** Every interactive control must provide active tactile feedback (`active:scale-[0.98]` or visible color shift), with zero reliance on hover-only visibility.
+
+### 9.5 Layoutmobile Delivery Gate Checklist (Mandatory for PRs/Commits)
+- [ ] Does the layout reflow into a distinct mobile state rather than a squeezed desktop? (R-03)
+- [ ] Are there defined states across mobile, tablet, and desktop (3-state reflow)? (R-03, R-35)
+- [ ] Do sizes (type, gaps, padding) follow the mobile scale register? (R-03, R-05)
+- [ ] Do tables collapse into touch-friendly cards on mobile viewports? (R-03)
+- [ ] Is there zero horizontal scroll leak across the entire document (`min-w-0`, text wrapping)? (R-03)
+- [ ] Are all interactive touch targets at least 44 x 44 px with adequate spacing? (R-03)
+- [ ] Do modals and drawers avoid clipping and work with mobile keyboards (`max-h-[90dvh]`)? (R-03)
+- [ ] Are all hover states accompanied by tap/active feedback? (R-03)
+- [ ] Has the layout been verified across 320px, 375px, 768px, and desktop widths? (R-35)
+
