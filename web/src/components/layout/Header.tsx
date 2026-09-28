@@ -4,9 +4,10 @@ import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { createPortal } from "react-dom";
 import { usePrivy } from "@privy-io/react-auth";
 import { useAccount, useDisconnect } from "wagmi";
-import { LogIn, LogOut, Github, Compass, LayoutDashboard, Terminal, ChevronDown, Copy, Check } from "lucide-react";
+import { LogIn, LogOut, Github, Compass, LayoutDashboard, Terminal, ChevronDown, Copy, Check, Menu, X } from "lucide-react";
 import { formatAddress } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
@@ -17,11 +18,30 @@ export function Header() {
   const { disconnect } = useDisconnect();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => setMounted(true), []);
 
   const activeAddress = user?.wallet?.address || address;
   const isLoggedIn = Boolean((ready && authenticated) || (isConnected && Boolean(address)));
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [pathname]);
+
+  // Lock body scroll while the mobile sheet is open
+  useEffect(() => {
+    if (!isMenuOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [isMenuOpen]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -33,6 +53,16 @@ export function Header() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const handleEscape = (e: KeyboardEvent) => {
+    if (e.key === "Escape") setIsMenuOpen(false);
+  };
+
+  useEffect(() => {
+    if (!isMenuOpen) return;
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [isMenuOpen]);
 
   const handleCopyAddress = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -106,30 +136,15 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
-          <nav className="flex md:hidden items-center gap-1 font-mono text-xs">
-            <Link
-              href="/explore"
-              className={cn(
-                "px-2 sm:px-2.5 py-1.5 rounded-md text-xs transition-colors min-h-[36px] flex items-center",
-                pathname === "/explore"
-                  ? "bg-brand-primary/10 text-brand-primary font-semibold"
-                  : "text-content-secondary hover:text-content-primary hover:bg-surface-tertiary/50"
-              )}
-            >
-              Explore
-            </Link>
-            <Link
-              href="/dashboard"
-              className={cn(
-                "px-2 sm:px-2.5 py-1.5 rounded-md text-xs transition-colors min-h-[36px] flex items-center",
-                pathname === "/dashboard"
-                  ? "bg-brand-primary/10 text-brand-primary font-semibold"
-                  : "text-content-secondary hover:text-content-primary hover:bg-surface-tertiary/50"
-              )}
-            >
-              Dashboard
-            </Link>
-          </nav>
+          <button
+            type="button"
+            onClick={() => setIsMenuOpen(true)}
+            aria-label="Open navigation menu"
+            aria-expanded={isMenuOpen}
+            className="md:hidden rounded-lg border border-surface-border bg-surface-tertiary p-2 text-content-primary hover:border-brand-primary/50 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center active:scale-95 shrink-0"
+          >
+            <Menu className="h-4 w-4" />
+          </button>
 
           {isLoggedIn ? (
             <div className="relative" ref={dropdownRef}>
@@ -216,6 +231,85 @@ export function Header() {
           )}
         </div>
       </div>
+
+      {isMenuOpen && mounted &&
+        createPortal(
+        <div className="md:hidden fixed inset-0 z-[60]">
+          <div
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
+            onClick={() => setIsMenuOpen(false)}
+          />
+
+          <div className="absolute top-0 right-0 h-full w-[82%] max-w-sm bg-surface-secondary border-l border-surface-border shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 ease-out">
+            <div className="flex items-center justify-between h-14 px-4 border-b border-surface-border shrink-0">
+              <span className="font-bold text-sm tracking-tight text-content-primary">Navigation</span>
+              <button
+                type="button"
+                onClick={() => setIsMenuOpen(false)}
+                aria-label="Close navigation menu"
+                className="rounded-lg border border-surface-border bg-surface-tertiary p-2 text-content-primary hover:border-brand-primary/50 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center active:scale-95"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <nav className="flex flex-col gap-1.5 p-4 flex-1 overflow-y-auto">
+              {navLinks.map((link, i) => {
+                const Icon = link.icon;
+                const isActive = pathname === link.href;
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={cn(
+                      "flex items-center gap-3 px-4 py-3.5 rounded-xl transition-colors min-h-[52px] text-sm font-medium",
+                      isActive
+                        ? "bg-brand-primary/10 text-brand-primary font-semibold border border-brand-primary/30"
+                        : "text-content-secondary hover:text-content-primary hover:bg-surface-tertiary/50 border border-transparent",
+                      "animate-in fade-in-0 slide-in-from-right duration-300 [animation-fill-mode:backwards]"
+                    )}
+                    style={{ animationDelay: `${80 + i * 60}ms` }}
+                  >
+                    <Icon className="w-4 h-4 shrink-0" />
+                    <span>{link.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+
+            <div className="p-4 border-t border-surface-border shrink-0">
+              {isLoggedIn && activeAddress ? (
+                <div className="flex items-center gap-2.5 rounded-xl border border-surface-border bg-surface-tertiary px-3 py-3 min-h-[52px]">
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[10px] text-content-muted font-mono">Connected Wallet</span>
+                    <span className="font-mono text-xs font-semibold text-content-primary truncate">
+                      {formatAddress(activeAddress)}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    login();
+                  }}
+                  disabled={!ready}
+                  className={cn(
+                    "w-full flex items-center justify-center gap-2 rounded-xl bg-brand-primary text-black font-semibold text-sm py-3.5 hover:bg-brand-hover transition-all active:scale-[0.98] min-h-[52px]",
+                    !ready && "opacity-70 cursor-not-allowed"
+                  )}
+                >
+                  <LogIn className="w-4 h-4 shrink-0" />
+                  <span>{ready ? "Connect Wallet" : "Connecting..."}</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body
+        )}
     </header>
   );
 }
