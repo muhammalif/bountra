@@ -97,7 +97,7 @@ export function Header() {
     <header className="border-b border-surface-border bg-surface-secondary/80 backdrop-blur-md sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2">
         <div className="flex items-center gap-3 sm:gap-6 min-w-0 shrink">
-          <Link href="/" className="flex items-center gap-2 sm:gap-2.5 group min-w-0">
+          <Link href="/" className="flex items-center gap-2 sm:gap-2.5 min-h-[44px] min-w-[44px] justify-center group min-w-0">
             <div className="relative w-7 h-7 sm:w-8 sm:h-8 rounded-lg overflow-hidden bg-black border border-surface-border transition-transform group-hover:scale-105 shrink-0">
               <Image
                 src="/bountra-logo.png"
@@ -194,7 +194,7 @@ export function Header() {
                     <button
                       type="button"
                       onClick={handleDisconnect}
-                      className="w-full px-3 py-2 rounded-lg text-left text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 flex items-center gap-2 transition-colors min-h-[40px]"
+                      className="w-full px-3 py-2 rounded-lg text-left text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 flex items-center gap-2 transition-colors min-h-[44px]"
                     >
                       <LogOut className="w-3.5 h-3.5" />
                       <span>Disconnect</span>
@@ -209,7 +209,7 @@ export function Header() {
               onClick={() => login()}
               disabled={!ready}
               className={cn(
-                "px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-brand-primary text-black font-semibold text-xs sm:text-sm hover:bg-brand-hover flex items-center gap-1.5 sm:gap-2 transition-all shadow-sm active:scale-95 min-h-[36px] shrink-0",
+                "px-2.5 sm:px-4 py-1.5 sm:py-2 min-h-[44px] flex items-center rounded-lg bg-brand-primary text-black font-semibold text-xs sm:text-sm hover:bg-brand-hover flex items-center gap-1.5 sm:gap-2 transition-all shadow-sm active:scale-95 min-h-[44px] shrink-0",
                 !ready && "opacity-70 cursor-not-allowed"
               )}
             >

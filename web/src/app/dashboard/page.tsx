@@ -76,7 +76,7 @@ export default function DashboardPage() {
                 type="button"
                 onClick={() => login()}
                 disabled={!ready}
-                className="px-6 py-3 rounded-lg bg-brand-primary text-black font-semibold text-xs sm:text-sm hover:bg-brand-hover active:bg-brand-hover active:scale-[0.98] transition-colors flex items-center gap-2 shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
+                className="px-6 py-3 min-h-[44px] rounded-lg bg-brand-primary text-black font-semibold text-xs sm:text-sm hover:bg-brand-hover active:bg-brand-hover active:scale-[0.98] transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 <ArrowRight className="h-4 w-4" />
                 <span>{ready ? "Connect Wallet" : "Connecting..."}</span>

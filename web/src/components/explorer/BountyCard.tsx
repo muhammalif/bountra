@@ -130,7 +130,7 @@ export function BountyCard({ bounty, onSelect }: BountyCardProps) {
             target="_blank"
             rel="noreferrer"
             title="Open GitHub Issue"
-            className="rounded-lg border border-surface-border bg-surface-primary hover:border-surface-border-hover p-2 text-content-muted hover:text-content-primary transition-colors"
+            className="rounded-lg border border-surface-border bg-surface-primary hover:border-surface-border-hover p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-content-muted hover:text-content-primary transition-colors active:scale-[0.98]"
           >
             <ExternalLink className="w-3.5 h-3.5" />
           </a>

@@ -79,7 +79,7 @@ export function BountyFilter({
             key={tab.id}
             onClick={() => onStatusChange(tab.id)}
             className={cn(
-              "px-3 py-1.5 rounded-lg font-mono text-xs transition-all whitespace-nowrap min-h-[36px] active:scale-95 shrink-0",
+              "px-3 py-1.5 rounded-lg font-mono text-xs transition-all whitespace-nowrap min-h-[44px] active:scale-95 shrink-0",
               selectedStatus === tab.id
                 ? "bg-brand-primary/10 text-brand-primary border border-brand-primary/30 font-semibold"
                 : "text-content-secondary hover:text-content-primary hover:bg-surface-secondary"
