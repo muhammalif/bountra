@@ -25,7 +25,11 @@ export const metadata: Metadata = {
       { url: "/favicon-128x128.png", sizes: "128x128", type: "image/png" }
     ],
     apple: "/apple-touch-icon.png"
-  },
+  }
+};
+
+export const viewport = {
+  colorScheme: "dark" as const,
   themeColor: "#000000"
 };
 
