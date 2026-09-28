@@ -69,7 +69,7 @@ Bountra bridges GitHub repositories with BNB Smart Chain smart contracts through
 ```
 
 * **Smart Contracts:** Solidity `0.8.28`, EVM `cancun`, OpenZeppelin v5, Foundry testing suite (15/15 tests passing).
-* **Agent Engine:** Fastify REST API, Viem Cryptographic Signer, Octokit API, Google Gemini 2.0 Flash Free Tier (16/16 tests passing).
+* **Agent Engine:** Fastify REST API, Viem Cryptographic Signer, Octokit API, Google Gemini Flash Free Tier (16/16 tests passing).
 * **Frontend Web App:** Next.js 14 App Router (`14.2.35`), Tailwind CSS, Magic UI (Animated Beam, Animated Shiny Text), Privy Auth & Embedded EVM Wallet, Wagmi v2 / Viem, Anti-Slop UI.
 
 ---

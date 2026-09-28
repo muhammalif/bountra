@@ -182,7 +182,7 @@ Related: [[_MOC/Index|Knowledge Map]] · [[Projects/BNB Hackathon 2026 - Project
 ### Sprint H2: Agent Backend & Evaluation Engine (Day 2 - Completed)
 * [x] Setup Fastify Webhook listener & API service.
 * [x] Integrasi Octokit API (fetch issue, diff, commit, check runs).
-* [x] Implementasi prompt engine Gemini 2.0 Flash dengan 5-layer Security Gates.
+* [x] Implementasi prompt engine Gemini Flash dengan 5-layer Security Gates.
 * [x] Integrasi ECDSA Signer menggunakan Viem wallet (keccak256 digest + ecrecover on-chain).
 
 ### Sprint H3: Frontend Dashboard & Live Demo (Day 3 - In Progress)
@@ -208,14 +208,14 @@ Related: [[_MOC/Index|Knowledge Map]] · [[Projects/BNB Hackathon 2026 - Project
 ## 8. Status Progress
 
 * **Status Proyek:** 🟢 `completed & polished` (Seluruh Sprint H0, H1, H2, H3.1–H3.7 Selesai 100%)
-* **Customer-Facing Branding:** Auditor = **Bountra Agent** (pipeline tracker, live terminal, report 5-layer). `Gemini 2.0 Flash` = detail provider backend, tidak tampil di UI publik.
+* **Customer-Facing Branding:** Auditor = **Bountra Agent** (pipeline tracker, live terminal, report 5-layer). `Gemini Flash` = detail provider backend, tidak tampil di UI publik.
 * **Deployed Smart Contract:**
   * **Network:** BSC Testnet (Chain ID `97`)
   * **Contract Address:** `0xbe576879961Bd8cdf7CfA72F146C8a3E352c7260` (TVL Terkunci: 800 USDT di 4 bounty on-chain #0..#3)
   * **Mock USDT Address:** `0x189C7cA448e89DaF1C2A1C9a4DB4D9Ec475441c1` (Decimals: 18)
   * **Agent Signer:** `0x2e10F4a41F665c657Ff4deC4A780e8734A066848`
   * **Explorer:** [BscScan Testnet](https://testnet.bscscan.com/address/0xbe576879961Bd8cdf7CfA72F146C8a3E352c7260)
-* **Agent Backend Engine:** Fastify REST API + Viem Signer + Gemini 2.0 Flash + Drizzle SQLite (16/16 tests PASS).
+* **Agent Backend Engine:** Fastify REST API + Viem Signer + Gemini Flash + Drizzle SQLite (16/16 tests PASS).
 * **Frontend Multi-Page dApp:** Next.js 14 App Router (`/`, `/explore`, `/dashboard`) + Privy Auth & Embedded Wallet + Wagmi v2.
 * **Submission Materials:** `README.md`, `docs/DEMO_SCRIPT.md`, `docs/PITCH.md`.
 

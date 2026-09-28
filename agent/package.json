@@ -8,7 +8,8 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "test": "tsx --test test/**/*.test.ts",
+    "test": "tsx --import ./test/setup.ts --test test/**/*.test.ts",
+    "test:live": "tsx --test test/live-gemini.live.ts",
     "db:push": "drizzle-kit push"
   },
   "dependencies": {

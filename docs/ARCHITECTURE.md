@@ -25,7 +25,7 @@
                                         │ 4. Integrity Check      │        │
                                         │    └─ Test Tamper Scan  │        │
                                         │ 5a. Soft Gate           │        │
-                                        │    └─ Gemini 2.0 Flash │        │
+                                        │    └─ Gemini Flash │        │
                                         │ 5b. ECDSA Signer       │        │
                                         │    └─ Viem Wallet       │───────>│
                                         ├─────────────────────────┤        │
@@ -82,7 +82,7 @@ agent/
 │   │   ├── hardGate.ts         # Fetch CI check_runs from GitHub API
 │   │   └── integrityCheck.ts   # Detect test assertion tampering in diff
 │   ├── ai/
-│   │   ├── evaluator.ts        # Gemini 1.5/2.0 Flash prompt engine
+│   │   ├── evaluator.ts        # Gemini Flash prompt engine
 │   │   └── schema.ts           # JSON Schema for structured output
 │   ├── signer/
 │   │   └── ecdsa.ts            # Viem wallet ECDSA message signing
@@ -154,7 +154,7 @@ web/
                               ↓ (PASS)
                     Agent: integrityCheck() → scan test diff
                               ↓ (CLEAN)
-                    Agent: evaluator() → Gemini 2.0 Flash
+                    Agent: evaluator() → Gemini Flash
                               ↓ (PASSED, score ≥ 70)
                     Agent: ecdsa.sign(bountyId, devWallet, commitHash, prUrl, nonce)
                               ↓
@@ -213,7 +213,7 @@ web/
 | Agent Runtime | Node.js | 20 LTS | Webhook server, orchestration |
 | Agent Framework | Fastify | v5.x | HTTP server for webhook endpoint |
 | GitHub SDK | Octokit | Latest | REST API + Webhook verification |
-| AI Engine | Gemini 1.5/2.0 Flash | Latest | Code audit with structured outputs |
+| AI Engine | Gemini Flash | Latest | Code audit with structured outputs |
 | Web3 SDK | Viem | v2.x | Contract interaction, ECDSA signing |
 | Wallet & Auth SDK | Privy (@privy-io/react-auth) + Wagmi | Latest | Embedded wallet, GitHub auth & external wallets |
 | Frontend | Next.js | 14.x | App Router, SSR landing + dashboard |

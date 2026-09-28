@@ -19,6 +19,69 @@ export interface EvaluationResult {
   weaknesses: string[];
 }
 
+/**
+ * Model selection (docs/RULES.md §3 — free-tier Flash model).
+ *
+ * The previous hardcode `gemini-2.0-flash` was retired by Google; every live
+ * audit returned HTTP 404. Override without touching code via GEMINI_MODEL.
+ *
+ * Order matters: GEMINI_PRIMARY is tried first, GEMINI_FALLBACK only after the
+ * primary exhausts its retries. Both are free-tier Flash models.
+ */
+export const GEMINI_PRIMARY_MODEL = process.env.GEMINI_PRIMARY_MODEL || "gemini-3.1-flash-lite";
+export const GEMINI_FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL || "gemini-3.6-flash";
+
+/** docs/RULES.md §7 — timeout 10s, retry 1 attempt with 2s delay. */
+const REQUEST_TIMEOUT_MS = 10_000;
+const MAX_ATTEMPTS = 2;
+const RETRY_DELAY_MS = 2_000;
+
+/** Error carrying the upstream provider status so routes can map it correctly. */
+export class EvaluatorUnavailableError extends Error {
+  readonly providerStatus?: number;
+
+  constructor(message: string, providerStatus?: number) {
+    super(message);
+    this.name = "EvaluatorUnavailableError";
+    this.providerStatus = providerStatus;
+  }
+}
+
+function extractProviderStatus(err: unknown): number | undefined {
+  const raw = String((err as { message?: string })?.message || err);
+  const match = raw.match(/"code"\s*:\s*(\d{3})/);
+  return match ? Number(match[1]) : undefined;
+}
+
+function isRetryable(err: unknown): boolean {
+  const status = extractProviderStatus(err);
+  // 404 = retired model, 400 = malformed request: both permanent, never retry.
+  if (status === 404 || status === 400 || status === 403) return false;
+  // Anything else (429, 500, 503 high-demand, network) is worth one retry.
+  return true;
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_resolve, reject) => {
+        timer = setTimeout(
+          () => reject(new EvaluatorUnavailableError(`${label} timed out after ${ms}ms`)),
+          ms
+        );
+      })
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 const AUDIT_SYSTEM_INSTRUCTION = `
 You are Bountra AI PR Auditor — an incorruptible code review agent operating on BNB Chain.
 Your mission is to evaluate if the developer's pull request diff faithfully resolves the assigned issue.
@@ -43,8 +106,7 @@ export async function evaluatePrWithGemini(
   const ai = new GoogleGenAI({ apiKey });
   const userContent = buildSandboxedPromptContext(input);
 
-  const response = await ai.models.generateContent({
-    model: "gemini-2.0-flash",
+  const requestBody = {
     contents: userContent,
     config: {
       systemInstruction: AUDIT_SYSTEM_INSTRUCTION,
@@ -70,20 +132,52 @@ export async function evaluatePrWithGemini(
         ]
       }
     }
-  });
-
-  const responseText = response.text || "{}";
-  const parsed = JSON.parse(responseText) as EvaluationResult;
-
-  return {
-    score: Number(parsed.score) || 0,
-    verdict: parsed.score >= 70 && parsed.acceptanceCriteriaMatched && !parsed.tamperingDetected ? "passed" : "failed",
-    summary: parsed.summary || "Audit complete.",
-    acceptanceCriteriaMatched: Boolean(parsed.acceptanceCriteriaMatched),
-    tamperingDetected: Boolean(parsed.tamperingDetected),
-    strengths: Array.isArray(parsed.strengths) ? parsed.strengths : [],
-    weaknesses: Array.isArray(parsed.weaknesses) ? parsed.weaknesses : []
   };
+
+  // docs/RULES.md §7 — try primary, then fallback. Both get MAX_ATTEMPTS tries
+  // with a fixed delay. Retired models (404) skip the retry budget entirely.
+  const models = [GEMINI_PRIMARY_MODEL, GEMINI_FALLBACK_MODEL];
+  let lastError: unknown;
+
+  for (const model of models) {
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      try {
+        const response = await withTimeout(
+          ai.models.generateContent({ model, ...requestBody }),
+          REQUEST_TIMEOUT_MS,
+          `${model} attempt ${attempt}`
+        );
+
+        const responseText = response.text || "{}";
+        const parsed = JSON.parse(responseText) as EvaluationResult;
+
+        return {
+          score: Number(parsed.score) || 0,
+          // Verdict is derived from score + gates, never trusted from the model.
+          verdict:
+            parsed.score >= 70 && parsed.acceptanceCriteriaMatched && !parsed.tamperingDetected
+              ? "passed"
+              : "failed",
+          summary: parsed.summary || "Audit complete.",
+          acceptanceCriteriaMatched: Boolean(parsed.acceptanceCriteriaMatched),
+          tamperingDetected: Boolean(parsed.tamperingDetected),
+          strengths: Array.isArray(parsed.strengths) ? parsed.strengths : [],
+          weaknesses: Array.isArray(parsed.weaknesses) ? parsed.weaknesses : []
+        };
+      } catch (err) {
+        lastError = err;
+        if (!isRetryable(err) || attempt === MAX_ATTEMPTS) break;
+        await delay(RETRY_DELAY_MS);
+      }
+    }
+  }
+
+  const providerStatus = extractProviderStatus(lastError);
+  throw new EvaluatorUnavailableError(
+    `Semantic audit unavailable after ${models.length * MAX_ATTEMPTS} attempts ` +
+      `(${models.join(" -> ")}): ${String((lastError as Error)?.message || lastError).slice(0, 300)}`,
+    providerStatus
+  );
 }
 
 /**

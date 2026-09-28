@@ -57,7 +57,7 @@
 | FR-2 | **Webhook Detection** | Agent receives and validates `pull_request.opened` and `pull_request.synchronize` events within 5 seconds |
 | FR-3 | **Hard Gate (CI Check)** | Agent fetches `check_runs` status from GitHub API; CI failure = instant reject without calling LLM |
 | FR-4 | **Test Integrity Check** | Agent detects modifications to existing test assertions in the PR diff; unauthorized weakening = reject |
-| FR-5 | **Soft Gate (AI Audit)** | Gemini 1.5/2.0 Flash evaluates diff against issue acceptance criteria; returns structured JSON verdict |
+| FR-5 | **Soft Gate (AI Audit)** | Gemini Flash (free tier, configurable via GEMINI_PRIMARY_MODEL) evaluates diff against issue acceptance criteria; returns structured JSON verdict |
 | FR-6 | **Cryptographic Payout** | Agent generates ECDSA signature binding `(bountyId, devWallet, commitHash, prUrl, nonce)`; developer calls `claimBounty()` on-chain |
 | FR-7 | **PR Comment** | Agent posts transparent audit result (score, checklist, verdict) as a GitHub PR comment |
 | FR-8 | **Refund / Cancel** | Project owner can withdraw locked funds after bounty deadline expires with no valid claim |
@@ -101,7 +101,7 @@
 
 - [ ] GitHub App / Webhook receiver (Fastify) operational
 - [ ] Octokit integration: fetch issue spec, diff, commit hash, check_runs
-- [ ] Gemini 1.5/2.0 Flash prompt engine with enforced JSON Schema
+- [ ] Gemini Flash (free tier, configurable via GEMINI_PRIMARY_MODEL) prompt engine with enforced JSON Schema
 - [ ] ECDSA signer via Viem private key wallet
 - [ ] PR auto-commenting with structured verdict
 - **Exit:** End-to-end webhook → audit → signature generation works on a test repo

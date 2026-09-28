@@ -41,7 +41,7 @@
 
 ## 3. LLM Guardrails
 
-- **Model:** Gemini 1.5/2.0 Flash (Google AI Studio free tier)
+- **Model:** Gemini Flash (Google AI Studio free tier), configurable via `GEMINI_PRIMARY_MODEL` with `GEMINI_FALLBACK_MODEL` as secondary
 - **Temperature:** 0.0 (deterministic evaluation)
 - **Response format:** `response_mime_type: "application/json"` with `response_schema` enforced
 - **Required output fields:**
@@ -83,7 +83,7 @@
 - Examples:
   - `feat(contracts): implement createBounty with ERC-20 deposit`
   - `test(contracts): add replay attack protection tests`
-  - `feat(agent): integrate Gemini 2.0 Flash evaluation engine`
+  - `feat(agent): integrate Gemini Flash evaluation engine`
   - `docs: add ARCHITECTURE.md with component diagrams`
 - Keep commits atomic: one logical change per commit
 - Never force-push to main branch
@@ -105,7 +105,17 @@
 ### Agent Backend
 - Webhook signature verification: test valid + tampered payloads
 - Hard Gate: test CI pass/fail status mapping
-- AI evaluator: test with mock Gemini response (both pass and fail)
+- **AI evaluator:** test with mock Gemini response (both pass and fail) — enforced by
+  `test/setup.ts`, which clears `GEMINI_API_KEY` before any test module loads. The suite
+  must never make a live provider call; a passing suite reflects this repo, not Google's uptime.
+- **Live provider path:** `pnpm test:live` (requires `set -a && . ./.env`) exercises the real
+  Gemini call including retry, fallback, and prompt-injection detection. Not part of `pnpm test`.
+- **Model IDs:** no hardcoded model strings. `GEMINI_PRIMARY_MODEL` / `GEMINI_FALLBACK_MODEL`
+  default to `gemini-3.1-flash-lite` / `gemini-3.6-flash`. Retired IDs (e.g. `gemini-2.0-flash`,
+  `gemini-2.5-flash`) return 404 and are detected as permanent failures — never retried.
+- **Provider failure must not masquerade as a verdict:** `EvaluatorUnavailableError` maps to
+  HTTP 503 with `verdict: "error"` and an `audit_logs` row of `status = "error"`. No signature
+  is produced. A provider 404 must never surface as a Bountra 404.
 - ECDSA signer: verify signature recovery matches agent address
 
 ### Frontend

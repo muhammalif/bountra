@@ -8,7 +8,7 @@ import {
   updateBountyStatus
 } from "../db/index.js";
 import { signBountyClaim } from "../signer/index.js";
-import { evaluatePrWithGemini, mockEvaluatePr } from "../evaluator/gemini.js";
+import { evaluatePrWithGemini, mockEvaluatePr, EvaluatorUnavailableError } from "../evaluator/gemini.js";
 import { checkTestTampering } from "../evaluator/security.js";
 import type { Address, Hex } from "viem";
 
@@ -155,9 +155,41 @@ export async function apiRoutes(app: FastifyInstance) {
         });
       }
 
-      const aiResult = process.env.GEMINI_API_KEY
-        ? await evaluatePrWithGemini({ issueTitle, issueBody, prTitle, prBody, diff })
-        : mockEvaluatePr({ issueTitle, issueBody, prTitle, prBody, diff });
+      let aiResult;
+      try {
+        aiResult = process.env.GEMINI_API_KEY
+          ? await evaluatePrWithGemini({ issueTitle, issueBody, prTitle, prBody, diff })
+          : mockEvaluatePr({ issueTitle, issueBody, prTitle, prBody, diff });
+      } catch (err) {
+        // docs/RULES.md §7 — log, mark audit as "error", skip. Never surface a
+        // provider status code (404/503) as if it were a Bountra 404, and never
+        // let a failed audit silently look like a passing one.
+        if (err instanceof EvaluatorUnavailableError) {
+          app.log.error({ err: err.message, providerStatus: err.providerStatus }, "semantic audit unavailable");
+
+          await createAuditLog({
+            bountyId,
+            prUrl,
+            commitHash,
+            developer: devWallet,
+            ciStatus: "passed",
+            ciDetail: JSON.stringify({ automated: true }),
+            integrityOk: 1,
+            aiScore: 0,
+            aiVerdict: "error",
+            aiComment: `Semantic audit unavailable: ${err.message}`,
+            status: "error"
+          });
+
+          return reply.code(503).send({
+            success: false,
+            verdict: "error",
+            reason: "Semantic audit provider unavailable. No signature was produced.",
+            auditLogId: bountyId
+          });
+        }
+        throw err;
+      }
 
       let signature: Hex | null = null;
       let rawHash: Hex | null = null;
