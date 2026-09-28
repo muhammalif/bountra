@@ -18,7 +18,15 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Bountra — Autonomous GitHub PR Auditor & Escrow",
   description: "Commit your code, get paid by AI in seconds — zero human review delay on BNB Chain.",
-  keywords: ["BNB Chain", "AI Agent", "GitHub Bounty", "Escrow", "Bountra Agent", "Web3", "Foundry"]
+  keywords: ["BNB Chain", "AI Agent", "GitHub Bounty", "Escrow", "Bountra Agent", "Web3", "Foundry"],
+  icons: {
+    icon: [
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-128x128.png", sizes: "128x128", type: "image/png" }
+    ],
+    apple: "/apple-touch-icon.png"
+  },
+  themeColor: "#000000"
 };
 
 export default function RootLayout({
