@@ -24,6 +24,7 @@ export function CreateBountyModal({ isOpen, onClose, onSuccess }: CreateBountyMo
   const [issueUrl, setIssueUrl] = useState("");
   const [amount, setAmount] = useState("100");
   const [durationDays, setDurationDays] = useState("14");
+  const [customDays, setCustomDays] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const amountParsed = parseUnits(amount || "0", 18);
@@ -127,7 +128,18 @@ export function CreateBountyModal({ isOpen, onClose, onSuccess }: CreateBountyMo
       return;
     }
 
-    const deadline = BigInt(Math.floor(Date.now() / 1000) + parseInt(durationDays) * 86400);
+    const effectiveDays = durationDays === "custom" ? parseInt(customDays, 10) : parseInt(durationDays, 10);
+    if (isNaN(effectiveDays) || effectiveDays <= 0) {
+      setErrorMsg("Please specify a valid expiry duration of at least 1 day");
+      return;
+    }
+
+    if (effectiveDays > 365) {
+      setErrorMsg("Expiry duration cannot exceed 365 days");
+      return;
+    }
+
+    const deadline = BigInt(Math.floor(Date.now() / 1000) + effectiveDays * 86400);
 
     try {
       writeCreateBounty({
@@ -146,9 +158,20 @@ export function CreateBountyModal({ isOpen, onClose, onSuccess }: CreateBountyMo
     resetCreate();
     setIssueUrl("");
     setAmount("100");
+    setDurationDays("14");
+    setCustomDays("");
     setErrorMsg(null);
     onClose();
   };
+
+  const effectiveDays = durationDays === "custom" ? parseInt(customDays, 10) : parseInt(durationDays, 10);
+  const expiryDateStr = !isNaN(effectiveDays) && effectiveDays > 0
+    ? new Date(Date.now() + effectiveDays * 86400 * 1000).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric"
+      })
+    : "—";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
@@ -252,9 +275,36 @@ export function CreateBountyModal({ isOpen, onClose, onSuccess }: CreateBountyMo
                   <option value="14">14 Days</option>
                   <option value="30">30 Days</option>
                   <option value="60">60 Days</option>
+                  <option value="custom">Custom...</option>
                 </select>
               </div>
             </div>
+
+            {durationDays === "custom" && (
+              <div>
+                <label className="block text-xs font-mono font-medium text-content-secondary mb-1.5">
+                  Custom Duration (Days)
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="1"
+                    max="365"
+                    step="1"
+                    placeholder="e.g. 21"
+                    value={customDays}
+                    onChange={(e) => setCustomDays(e.target.value)}
+                    className="w-full rounded-lg border border-surface-border bg-surface-primary px-3.5 py-2 text-xs font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-mono text-content-muted">
+                    Days
+                  </span>
+                </div>
+                <span className="block mt-1 text-[10px] text-content-muted">
+                  Specify any deadline between 1 and 365 days.
+                </span>
+              </div>
+            )}
 
             <div className="rounded-lg border border-surface-border bg-surface-primary/60 p-3 text-xs font-mono space-y-1.5">
               <div className="flex justify-between text-content-secondary">
@@ -268,6 +318,12 @@ export function CreateBountyModal({ isOpen, onClose, onSuccess }: CreateBountyMo
               <div className="flex justify-between text-content-secondary">
                 <span>Token Asset:</span>
                 <span className="text-status-success">Mock BEP-20 USDT</span>
+              </div>
+              <div className="flex justify-between text-content-secondary">
+                <span>Expiry Deadline:</span>
+                <span className="text-content-primary">
+                  {!isNaN(effectiveDays) && effectiveDays > 0 ? `${effectiveDays}d (${expiryDateStr})` : "—"}
+                </span>
               </div>
             </div>
 
