@@ -116,6 +116,11 @@
 - **Provider failure must not masquerade as a verdict:** `EvaluatorUnavailableError` maps to
   HTTP 503 with `verdict: "error"` and an `audit_logs` row of `status = "error"`. No signature
   is produced. A provider 404 must never surface as a Bountra 404.
+- **Verdict reuse:** a repeated audit of the same claim returns the stored verdict with
+  `cached: true` and no provider call. Scope is `(bountyId, prUrl, commitHash, developer)` —
+  the signature is bound to all of those, so reuse across bounties would be a replay.
+  Only `status = "passed"` rows are reusable; failed and errored verdicts are always
+  re-evaluated. Digests are recomputed from params, never read from the row.
 - ECDSA signer: verify signature recovery matches agent address
 
 ### Frontend

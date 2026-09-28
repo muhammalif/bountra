@@ -1,10 +1,10 @@
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
-import { eq, desc } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as schema from "./schema.js";
-import type { NewBounty, NewAuditLog, NewWebhookEvent } from "./schema.js";
+import type { AuditLog, NewBounty, NewAuditLog, NewWebhookEvent } from "./schema.js";
 
 const DEFAULT_DB_PATH = process.env.DATABASE_PATH || "./data/bountra.db";
 
@@ -132,7 +132,13 @@ export async function updateBountyStatus(bountyId: number, status: string, dbIns
 }
 
 export async function createAuditLog(data: NewAuditLog, dbInstance = db) {
-  return dbInstance.insert(schema.auditLogs).values(data).returning().get();
+  // Addresses arrive from clients in checksummed or lowercase form. Normalize on
+  // write so lookups (findReusableAudit) match regardless of the caller's casing.
+  return dbInstance
+    .insert(schema.auditLogs)
+    .values({ ...data, developer: data.developer.toLowerCase() })
+    .returning()
+    .get();
 }
 
 export async function getAuditLogByBountyId(bountyId: number, dbInstance = db) {
@@ -150,6 +156,47 @@ export async function updateAuditLog(id: number, data: Partial<NewAuditLog>, dbI
     .set(data)
     .where(eq(schema.auditLogs.id, id))
     .returning()
+    .get();
+}
+
+/**
+ * Reusable audit verdict for an already-audited claim.
+ *
+ * This is the A2 cache. It deliberately reuses `audit_logs` rather than adding a
+ * dedicated table: the row already holds score, verdict, signature and summary,
+ * and it doubles as the immutable audit trail the product is built on. A separate
+ * cache table would be a second source of truth for the same fact.
+ *
+ * Scoped by bountyId, developer and contract as well as (prUrl, commitHash):
+ * the ECDSA signature is computed over all of those, so a verdict signed for
+ * bounty A cannot be replayed to release bounty B even when the commit matches.
+ *
+ * Returns undefined for errored or missing rows — a provider failure is never
+ * cached, so a transient outage can't pin a bounty to a bad verdict.
+ */
+export async function findReusableAudit(
+  params: {
+    bountyId: number;
+    prUrl: string;
+    commitHash: string;
+    developer: string;
+    contractAddress?: string;
+  },
+  dbInstance = db
+): Promise<AuditLog | undefined> {
+  return dbInstance
+    .select()
+    .from(schema.auditLogs)
+    .where(
+      and(
+        eq(schema.auditLogs.bountyId, params.bountyId),
+        eq(schema.auditLogs.prUrl, params.prUrl),
+        eq(schema.auditLogs.commitHash, params.commitHash),
+        eq(schema.auditLogs.developer, params.developer.toLowerCase()),
+        eq(schema.auditLogs.status, "passed")
+      )
+    )
+    .orderBy(desc(schema.auditLogs.id))
     .get();
 }
 

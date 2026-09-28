@@ -5,9 +5,14 @@ import {
   createBountyRecord,
   getAuditLogByBountyId,
   createAuditLog,
-  updateBountyStatus
+  updateBountyStatus,
+  findReusableAudit
 } from "../db/index.js";
-import { signBountyClaim } from "../signer/index.js";
+import {
+  signBountyClaim,
+  computeRawClaimHash,
+  computeClaimDigest
+} from "../signer/index.js";
 import { evaluatePrWithGemini, mockEvaluatePr, EvaluatorUnavailableError } from "../evaluator/gemini.js";
 import { checkTestTampering } from "../evaluator/security.js";
 import type { Address, Hex } from "viem";
@@ -152,6 +157,40 @@ export async function apiRoutes(app: FastifyInstance) {
           verdict: "failed",
           reason: tamperingCheck.reason,
           auditLog: audit
+        });
+      }
+
+      // Re-auditing the same (pr, commit) is deterministic by construction, so a
+      // previously passed verdict is reusable. This keeps a re-triggered webhook
+      // or a repeated demo call instant and offline-safe, and avoids spending
+      // provider quota on a question already answered in the audit trail.
+      //
+      // The digests are recomputed rather than stored: they are pure functions of
+      // the same params the signature was produced from, and recomputing removes
+      // any chance of a cache hit disagreeing with on-chain bytes.
+      const cached = await findReusableAudit({ bountyId, prUrl, commitHash, developer: devWallet });
+      if (cached) {
+        app.log.info({ prUrl, commitHash }, "reusing existing audit verdict");
+
+        const claimParams = {
+          bountyId,
+          devWallet: devWallet as Address,
+          commitHash,
+          prUrl,
+          contractAddress: contractAddress as Address,
+          chainId
+        };
+
+        return reply.code(200).send({
+          success: true,
+          verdict: cached.aiVerdict,
+          score: cached.aiScore,
+          summary: cached.aiComment,
+          signature: cached.signature as Hex | null,
+          rawHash: computeRawClaimHash(claimParams),
+          digest: computeClaimDigest(claimParams),
+          cached: true,
+          auditLog: cached
         });
       }
 
