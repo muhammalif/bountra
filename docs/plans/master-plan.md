@@ -45,7 +45,7 @@ Related: [[_MOC/Index|Knowledge Map]] · [[Projects/BNB Hackathon 2026 - Project
 * **FR-1 (Bounty Creation):** Project owner dapat mengunci token (USDT/BNB) di smart contract dengan mengaitkan link GitHub Issue dan durasi deadline.
 * **FR-2 (Event Detection):** Backend Agent mendengarkan GitHub Webhook (`pull_request.opened`, `pull_request.synchronize`) secara real-time.
 * **FR-3 (Automated Hard Gate):** Sistem membaca status CI via GitHub API (`check_runs`). Jika CI gagal/merah, proses langsung dihentikan (*Instant Fail*).
-* **FR-4 (Semantic AI Audit):** Gemini 1.5 / 2.0 Flash mengevaluasi `git diff` terhadap *Acceptance Criteria* issue dan memverifikasi tidak ada celah keamanan baru.
+* **FR-4 (Semantic AI Audit):** Gemini Flash (configurable via `GEMINI_PRIMARY_MODEL`) mengevaluasi `git diff` terhadap *Acceptance Criteria* issue dan memverifikasi tidak ada celah keamanan baru.
 * **FR-5 (Cryptographic Payout Release):** Jika audit lolos 100%, Agent menandatangani approval ECDSA dan developer dapat mengeksekusi `claimBounty` untuk menerima dana langsung.
 * **FR-6 (Refund & Cancel):** Project owner dapat melakukan refund dana jika bounty kedaluwarsa tanpa ada PR yang memenuhi syarat.
 
@@ -53,7 +53,7 @@ Related: [[_MOC/Index|Knowledge Map]] · [[Projects/BNB Hackathon 2026 - Project
 
 | Kategori | Contoh Task | Hard Gate (Mesin / Deterministic) | Soft Gate (AI Agent / Semantic) |
 |---|---|---|---|
-| **Tier 1 (High Automation)** | Bug fixing, scoped features, refactoring, security patches | CI / GitHub Actions 100% Pass, test suite coverage bertambah/tetap, diff strictly scoped | Gemini 1.5 Flash cek pemenuhan Acceptance Criteria & bebas celah injeksi |
+| **Tier 1 (High Automation)** | Bug fixing, scoped features, refactoring, security patches | CI / GitHub Actions 100% Pass, test suite coverage bertambah/tetap, diff strictly scoped | Gemini Flash cek pemenuhan Acceptance Criteria & bebas celah injeksi |
 | **Tier 2 (Semantic Heavy)** | Dokumentasi API, Markdown specs, contract test cases | Linter / formatter pass, markdown AST valid | Evaluasi kelengkapan parameter, akurasi teknis, dan kejelasan struktur |
 | **Out of Scope** | Desain visual murni (UI styling), task tanpa kriteria terukur | Auto-reject / fallback ke manual consensus | Confidence score < 70% otomatis memicu review manual |
 
@@ -72,7 +72,7 @@ Related: [[_MOC/Index|Knowledge Map]] · [[Projects/BNB Hackathon 2026 - Project
 | **Blockchain Network** | BNB Smart Chain Testnet / opBNB | Kecepatan transaksi tinggi, biaya gas rendah, ekosistem DeFi/developer luas. |
 | **Agent Backend** | Node.js / TypeScript, Fastify / Express | Penanganan GitHub Webhooks, orchestrator evaluasi, signer cryptographic. |
 | **GitHub Integration** | Octokit REST & Webhooks SDK | Pengambilan context issue, `git diff`, commit hash, status check runs, dan auto-commenting review. |
-| **AI Evaluation Engine** | Google Gemini 1.5 / 2.0 Flash API | Inferensi berkecepatan tinggi, free-tier generous (Google AI Studio), dukungan *Native Structured Outputs* (JSON Schema ketat). |
+| **AI Evaluation Engine** | Google Gemini Flash (configurable via `GEMINI_PRIMARY_MODEL`) API | Inferensi berkecepatan tinggi, free-tier generous (Google AI Studio), dukungan *Native Structured Outputs* (JSON Schema ketat). |
 | **Web3 Client SDK** | Viem / Wagmi v2 | Interaksi blockchain ringan, penanganan signature ECDSA, dan wallet connection. |
 | **Frontend Dashboard** | Next.js (App Router), Tailwind CSS, Privy + Wagmi | Antarmuka pembuatan bounty, dashboard explorer, dan live review tracker. |
 
@@ -115,7 +115,7 @@ Related: [[_MOC/Index|Knowledge Map]] · [[Projects/BNB Hackathon 2026 - Project
 #### B. Agent Backend (GitHub Webhook & Evaluation Loop)
 * **Webhook Receiver:** Menangkap event `pull_request.opened` atau `pull_request.synchronize`.
 * **Context Extractor:** Mengambil detail spesifikasi issue GitHub + baris kode `git diff` via Octokit API.
-* **Evaluator Engine (Gemini 1.5 / 2.0 Flash):**
+* **Evaluator Engine (Gemini Flash (configurable via `GEMINI_PRIMARY_MODEL`)):**
   * Memeriksa kesesuaian diff terhadap requirement issue.
   * Menghasilkan verdict terstruktur: `{ passed: boolean, score: number, reviewComment: string, signature: string }`.
 * **GitHub PR Commenter:** Memposting hasil audit langsung sebagai komentar transparan di PR developer.
@@ -143,7 +143,7 @@ Related: [[_MOC/Index|Knowledge Map]] · [[Projects/BNB Hackathon 2026 - Project
 1. GitHub Webhook mentrigger Bountra Agent saat PR dibuat/diupdate.
 2. **Hard Gate:** Agent mengecek status CI (GitHub Actions). Jika merah $\rightarrow$ audit gagal seketika.
 3. **Integrity Check:** Agent memastikan test suite eksisting tidak diubah atau dilemahkan.
-4. **Soft Gate:** Agent mengevaluasi `git diff` terhadap requirements issue menggunakan Gemini 1.5 / 2.0 Flash.
+4. **Soft Gate:** Agent mengevaluasi `git diff` terhadap requirements issue menggunakan Gemini Flash (configurable via `GEMINI_PRIMARY_MODEL`).
 5. **Verdict & Signature:**
    * Jika lulus: Agent menandatangani payload dengan private key signer dan memposting review approve di PR.
    * Developer / Relayer memicu `claimBounty` dengan signature tersebut $\rightarrow$ Dana langsung ditransfer ke wallet developer.
@@ -198,6 +198,9 @@ Related: [[_MOC/Index|Knowledge Map]] · [[Projects/BNB Hackathon 2026 - Project
   * Pemisahan UX etalase publik (`/explore` view-only audit verdict) vs eksekusi privat (`/dashboard` Developer Hub untuk on-chain wallet claim).
   * Standarisasi branding layer audit otonom: **Bountra Agent**.
   * Sinkronisasi otentikasi Privy + Wagmi (auto-lock dashboard saat unconnect, dropdown wallet pill dengan tombol copy & clean disconnect).
+* [x] **H3.8 (Mobile-First Reflow):** `docs/DESIGN.md` §9 — Header/Footer/Hero/Pipeline/Terminal/Explorer/dashboard tables (cards < 640px, dense table ≥ 640px), modal & drawer reflow, zero horizontal overflow at 320–1440px, animated hamburger menu via portal.
+* [x] **H3.9 (Evaluator Hardening):** model ID moved to `GEMINI_PRIMARY_MODEL` / `GEMINI_FALLBACK_MODEL` (the previously hardcoded `gemini-2.0-flash` was retired by Google and 404'd), 10s timeout, one retry at 2s, failover to the fallback model, provider errors mapped to HTTP 503 `verdict: "error"` instead of a misleading 404, and the default test suite made hermetic.
+* [x] **H3.10 (Verdict Cache):** a repeated audit of the same claim reuses the stored `passed` verdict (`cached: true`, no provider call) instead of re-spending quota and ~11s. Scoped to `(bountyId, prUrl, commitHash, developer)` because the ECDSA signature is bound to all of those.
 * [x] **H3.7 (Copy & Terminal Hardening):**
   * Audit copywriting seluruh landing page, Explore, dan Dashboard dengan skill `antislop-copywriting` — 16 perbaikan (buang `AI-Powered`, `instantly`, `high-quality`, `ecosystem`, `Decentralized`, `Portal`).
   * Penyatuan tag Layer 4 di Live Audit Terminal: `GEMINI_EVAL` → `AGENT_EVAL`, teks `Evaluation complete.` → `Semantic audit complete.`
@@ -207,7 +210,7 @@ Related: [[_MOC/Index|Knowledge Map]] · [[Projects/BNB Hackathon 2026 - Project
 
 ## 8. Status Progress
 
-* **Status Proyek:** 🟢 `completed & polished` (Seluruh Sprint H0, H1, H2, H3.1–H3.7 Selesai 100%)
+* **Status Proyek:** 🟡 Fungsional complete, tersisa verifikasi non-code (Sprint H0, H1, H2, H3.1–H3.10 selesai; lihat §8.1 untuk gap yang masih terbuka)
 * **Customer-Facing Branding:** Auditor = **Bountra Agent** (pipeline tracker, live terminal, report 5-layer). `Gemini Flash` = detail provider backend, tidak tampil di UI publik.
 * **Deployed Smart Contract:**
   * **Network:** BSC Testnet (Chain ID `97`)
@@ -215,9 +218,19 @@ Related: [[_MOC/Index|Knowledge Map]] · [[Projects/BNB Hackathon 2026 - Project
   * **Mock USDT Address:** `0x189C7cA448e89DaF1C2A1C9a4DB4D9Ec475441c1` (Decimals: 18)
   * **Agent Signer:** `0x2e10F4a41F665c657Ff4deC4A780e8734A066848`
   * **Explorer:** [BscScan Testnet](https://testnet.bscscan.com/address/0xbe576879961Bd8cdf7CfA72F146C8a3E352c7260)
-* **Agent Backend Engine:** Fastify REST API + Viem Signer + Gemini Flash + Drizzle SQLite (16/16 tests PASS).
+* **Agent Backend Engine:** Fastify REST API + Viem Signer + Gemini Flash + Drizzle SQLite (20/20 tests PASS).
 * **Frontend Multi-Page dApp:** Next.js 14 App Router (`/`, `/explore`, `/dashboard`) + Privy Auth & Embedded Wallet + Wagmi v2.
 * **Submission Materials:** `README.md`, `docs/DEMO_SCRIPT.md`, `docs/PITCH.md`.
+
+### 8.1 Known Gaps (verified, not assumed)
+
+Code-complete is not the same as demo-complete. These are open:
+
+- **`pnpm build` in `web/` skips type-checking and linting** (`Skipping validation of types`, `Skipping linting`), so a green build does not prove type safety. The recent CSS-only edits were not type-verified.
+- **Populated dashboard unverified.** `/dashboard` has only ever been rendered behind the wallet gate with no connected wallet. The dense table, the mobile card view, and the claim signing flow have not been exercised against real on-chain data.
+- **First audit on a new PR is still slow or can fail.** Caching removes the cost of *repeat* calls only. A first call on an unseen PR measured 10.9s on success and 23.4s before a 503, because the provider intermittently returns 503 under load. Retry and failover reduce the risk; they do not eliminate it. Pre-audit the demo PRs before presenting.
+- **Touch targets were below 44px until the §9.5 gate audit.** Header nav was 36px, dashboard buttons 38–40px, hero CTAs 42px. All raised to 44px; the checklist was only ticked after re-measuring.
+- **`docs/PRD.md` acceptance boxes and `docs/DESIGN.md` §9.5 were unchecked despite the work being done** — the docs trailed the code by several milestones.
 
 ---
 

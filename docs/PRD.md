@@ -90,29 +90,29 @@
 
 ### Sprint H1: Smart Contract & Core (Day 1)
 
-- [ ] Foundry project initialized (`solc = 0.8.28`, `evm_version = cancun`)
-- [ ] `BountraEscrow.sol` implements `createBounty`, `claimBounty`, `cancelBounty`
-- [ ] OpenZeppelin v5 ECDSA + ReentrancyGuard integrated
-- [ ] Foundry test suite: deposit, claim with valid/invalid signature, replay protection, deadline refund
-- [ ] Contract deployed & verified on BSC Testnet
+- [x] Foundry project initialized (`solc = 0.8.28`, `evm_version = cancun`)
+- [x] `BountraEscrow.sol` implements `createBounty`, `claimBounty`, `cancelBounty`
+- [x] OpenZeppelin v5 ECDSA + ReentrancyGuard integrated
+- [x] Foundry test suite: deposit, claim with valid/invalid signature, replay protection, deadline refund
+- [x] Contract deployed & verified on BSC Testnet
 - **Exit:** `forge test` passes 100%, contract verified on BSCScan testnet
 
 ### Sprint H2: Agent Backend & AI Engine (Day 2)
 
-- [ ] GitHub App / Webhook receiver (Fastify) operational
-- [ ] Octokit integration: fetch issue spec, diff, commit hash, check_runs
-- [ ] Gemini Flash (free tier, configurable via GEMINI_PRIMARY_MODEL) prompt engine with enforced JSON Schema
-- [ ] ECDSA signer via Viem private key wallet
-- [ ] PR auto-commenting with structured verdict
+- [x] GitHub App / Webhook receiver (Fastify) operational
+- [x] Octokit integration: fetch issue spec, diff, commit hash, check_runs
+- [x] Gemini Flash (free tier, configurable via GEMINI_PRIMARY_MODEL) prompt engine with enforced JSON Schema
+- [x] ECDSA signer via Viem private key wallet
+- [x] PR auto-commenting with structured verdict
 - **Exit:** End-to-end webhook → audit → signature generation works on a test repo
 
 ### Sprint H3: Frontend & Demo (Day 3)
 
-- [ ] Next.js 14 landing page: hero, animated beam pipeline, live audit terminal
-- [ ] Dashboard: bounty data table, filters, detail drawer, create bounty modal
-- [ ] Privy wallet connection & GitHub auth with embedded EVM wallet to BNB Testnet
-- [ ] Live demo recording (3-minute video)
-- [ ] Pitch deck finalized & hackathon submission
+- [x] Next.js 14 landing page: hero, animated beam pipeline, live audit terminal
+- [x] Dashboard: bounty data table, filters, detail drawer, create bounty modal — *empty state verified only; the populated table and the claim signing flow still need a connected wallet against real on-chain data*
+- [x] Privy wallet connection & GitHub auth with embedded EVM wallet to BNB Testnet
+- [ ] Live demo recording (3-minute video) — *not recorded yet. `docs/DEMO_SCRIPT.md` is the script; the video is the remaining deliverable.*
+- [ ] Pitch deck finalized & hackathon submission — *`docs/PITCH.md` and `README.md` are written; the submission itself has not been made.*
 - **Exit:** Complete demo video showing PR → AI review → BSCScan payout transaction
 
 ---
