@@ -80,16 +80,16 @@ export default function ExplorePage() {
     <div className="min-h-screen bg-surface-primary text-content-primary flex flex-col font-sans selection:bg-brand-primary/20 selection:text-brand-primary">
       <Header />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-surface-border pb-8 mb-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-6 border-b border-surface-border pb-6 sm:pb-8 mb-6 sm:mb-8">
           <div>
-            <span className="font-mono text-xs uppercase tracking-wider font-semibold text-brand-primary mb-2 block">
+            <span className="font-mono text-xs uppercase tracking-wider font-semibold text-brand-primary mb-1.5 sm:mb-2 block">
               Code Bounty Directory
             </span>
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-content-primary">
+            <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-content-primary">
               Explore Active Bounties
             </h1>
-            <p className="mt-2 text-sm text-content-secondary max-w-2xl leading-relaxed">
+            <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm text-content-secondary max-w-2xl leading-relaxed">
               Find open GitHub issues with funds locked on BNB Chain. Submit PRs, pass the 5-layer Bountra Agent automated audit, and claim your reward.
             </p>
           </div>
@@ -97,7 +97,7 @@ export default function ExplorePage() {
           <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={() => setIsCreateModalOpen(true)}
-              className="px-4 py-2.5 rounded-lg bg-brand-primary text-black font-semibold text-xs hover:bg-brand-hover transition-colors flex items-center gap-2 shadow-sm"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-lg bg-brand-primary text-black font-semibold text-xs hover:bg-brand-hover transition-all flex items-center justify-center gap-2 shadow-sm min-h-[42px] active:scale-95"
             >
               <PlusCircle className="w-4 h-4" />
               <span>Create Bounty Escrow</span>
@@ -105,13 +105,13 @@ export default function ExplorePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <div className="p-4 rounded-xl border border-surface-border bg-surface-secondary/60">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <div className="p-3.5 sm:p-4 rounded-xl border border-surface-border bg-surface-secondary/60">
             <div className="flex items-center justify-between mb-1">
               <span className="text-[10px] font-mono uppercase text-content-muted">Total Escrow Value</span>
               <Coins className="h-4 w-4 text-brand-primary" />
             </div>
-            <div className="font-mono text-xl font-bold text-content-primary">
+            <div className="font-mono text-lg sm:text-xl font-bold text-content-primary">
               {totalTvl.toLocaleString()} USDT
             </div>
             <span className="text-[10px] font-mono text-content-secondary">
@@ -119,12 +119,12 @@ export default function ExplorePage() {
             </span>
           </div>
 
-          <div className="p-4 rounded-xl border border-surface-border bg-surface-secondary/60">
+          <div className="p-3.5 sm:p-4 rounded-xl border border-surface-border bg-surface-secondary/60">
             <div className="flex items-center justify-between mb-1">
               <span className="text-[10px] font-mono uppercase text-content-muted">Total Bounties</span>
               <ShieldCheck className="h-4 w-4 text-status-success" />
             </div>
-            <div className="font-mono text-xl font-bold text-content-primary">
+            <div className="font-mono text-lg sm:text-xl font-bold text-content-primary">
               {bounties.length} Escrows
             </div>
             <span className="text-[10px] font-mono text-content-secondary">
@@ -132,12 +132,12 @@ export default function ExplorePage() {
             </span>
           </div>
 
-          <div className="p-4 rounded-xl border border-surface-border bg-surface-secondary/60">
+          <div className="p-3.5 sm:p-4 rounded-xl border border-surface-border bg-surface-secondary/60">
             <div className="flex items-center justify-between mb-1">
               <span className="text-[10px] font-mono uppercase text-content-muted">Settlement Speed</span>
               <Zap className="h-4 w-4 text-status-warning" />
             </div>
-            <div className="font-mono text-xl font-bold text-content-primary mb-1">
+            <div className="font-mono text-lg sm:text-xl font-bold text-content-primary mb-0.5 sm:mb-1">
               &lt; 15s Latency
             </div>
             <span className="text-[10px] font-mono text-content-secondary">
@@ -146,7 +146,7 @@ export default function ExplorePage() {
           </div>
         </div>
 
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <BountyFilter
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
@@ -174,7 +174,7 @@ export default function ExplorePage() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
             {filteredBounties.map((bounty) => (
               <BountyCard
                 key={bounty.id}

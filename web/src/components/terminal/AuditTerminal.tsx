@@ -117,23 +117,33 @@ export function AuditTerminal() {
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-surface-border bg-surface-secondary shadow-2xl">
-        <div className="flex items-center justify-between border-b border-surface-border bg-surface-tertiary px-4 py-3">
-          <div className="flex items-center gap-2">
-            <div className="flex gap-1.5">
-              <div className="h-3 w-3 rounded-full bg-red-500/80" />
-              <div className="h-3 w-3 rounded-full bg-amber-500/80" />
-              <div className="h-3 w-3 rounded-full bg-emerald-500/80" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-surface-border bg-surface-tertiary px-3 sm:px-4 py-2.5 sm:py-3 gap-2.5 sm:gap-0">
+          <div className="flex items-center justify-between sm:justify-start gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="flex gap-1.5 shrink-0">
+                <div className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-red-500/80" />
+                <div className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-amber-500/80" />
+                <div className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-emerald-500/80" />
+              </div>
+              <span className="ml-1 sm:ml-2 font-mono text-[11px] sm:text-xs font-semibold text-content-muted truncate max-w-[210px] sm:max-w-none">
+                bountra-agent://evaluator/session-{selectedScenario.prNumber}
+              </span>
             </div>
-            <span className="ml-2 font-mono text-xs font-semibold text-content-muted">
-              bountra-agent://evaluator/session-{selectedScenario.prNumber}
-            </span>
+            <button
+              onClick={() => startSimulation(selectedScenario)}
+              disabled={isRunning}
+              title="Replay Simulation"
+              className="sm:hidden rounded p-1.5 text-content-muted hover:bg-surface-primary hover:text-content-primary transition-colors disabled:opacity-40 shrink-0 min-h-[36px] min-w-[36px] flex items-center justify-center"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+            </button>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 overflow-x-auto pb-0.5 sm:pb-0">
             <button
               onClick={() => setActiveTab("logs")}
               className={cn(
-                "rounded px-2.5 py-1 font-mono text-xs font-medium transition-colors",
+                "rounded px-2.5 py-1 font-mono text-[11px] sm:text-xs font-medium transition-colors shrink-0 min-h-[36px] flex items-center active:scale-[0.98]",
                 activeTab === "logs"
                   ? "bg-surface-primary text-brand-primary"
                   : "text-content-secondary hover:text-content-primary"
@@ -144,7 +154,7 @@ export function AuditTerminal() {
             <button
               onClick={() => setActiveTab("json")}
               className={cn(
-                "rounded px-2.5 py-1 font-mono text-xs font-medium transition-colors",
+                "rounded px-2.5 py-1 font-mono text-[11px] sm:text-xs font-medium transition-colors shrink-0 min-h-[36px] flex items-center active:scale-[0.98]",
                 activeTab === "json"
                   ? "bg-surface-primary text-brand-primary"
                   : "text-content-secondary hover:text-content-primary"
@@ -155,7 +165,7 @@ export function AuditTerminal() {
             <button
               onClick={() => setActiveTab("crypto")}
               className={cn(
-                "rounded px-2.5 py-1 font-mono text-xs font-medium transition-colors",
+                "rounded px-2.5 py-1 font-mono text-[11px] sm:text-xs font-medium transition-colors shrink-0 min-h-[36px] flex items-center active:scale-[0.98]",
                 activeTab === "crypto"
                   ? "bg-surface-primary text-brand-primary"
                   : "text-content-secondary hover:text-content-primary"
@@ -167,7 +177,7 @@ export function AuditTerminal() {
               onClick={() => startSimulation(selectedScenario)}
               disabled={isRunning}
               title="Replay Simulation"
-              className="ml-2 rounded p-1 text-content-muted hover:bg-surface-primary hover:text-content-primary transition-colors disabled:opacity-40"
+              className="hidden sm:flex ml-2 rounded p-1 text-content-muted hover:bg-surface-primary hover:text-content-primary transition-colors disabled:opacity-40"
             >
               <RotateCcw className="h-3.5 w-3.5" />
             </button>
@@ -180,23 +190,23 @@ export function AuditTerminal() {
           isPassed={selectedScenario.passed}
         />
 
-        <div className="p-4 sm:p-6 font-mono text-xs">
+        <div className="p-3 sm:p-6 font-mono text-xs">
           {activeTab === "logs" && (
-            <div className="space-y-2.5 min-h-[280px] max-h-[420px] overflow-y-auto pr-2">
+            <div className="space-y-2 sm:space-y-2.5 min-h-[260px] sm:min-h-[280px] max-h-[380px] sm:max-h-[420px] overflow-y-auto pr-1 sm:pr-2">
               {selectedScenario.logs.slice(0, visibleLogCount).map((log, idx) => (
-                <div key={idx} className="flex items-start gap-3 font-mono leading-relaxed">
-                  <span className="text-content-muted shrink-0 text-[11px]">{log.timestamp}</span>
-                  <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-bold border shrink-0", getTagColor(log.tag))}>
+                <div key={idx} className="flex items-start gap-2 sm:gap-3 font-mono leading-relaxed text-[11px] sm:text-xs">
+                  <span className="text-content-muted shrink-0 text-[10px] sm:text-[11px]">{log.timestamp}</span>
+                  <span className={cn("px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-bold border shrink-0", getTagColor(log.tag))}>
                     [{log.tag}]
                   </span>
-                  <span className={cn("text-content-primary", log.tag === "ERROR" && "text-status-danger font-semibold")}>
+                  <span className={cn("text-content-primary break-words min-w-0 flex-1", log.tag === "ERROR" && "text-status-danger font-semibold")}>
                     {log.message}
                   </span>
                 </div>
               ))}
               {isRunning && (
-                <div className="flex items-center gap-2 text-brand-primary pt-2 animate-pulse">
-                  <span className="inline-block h-2 w-2 rounded-full bg-brand-primary" />
+                <div className="flex items-center gap-2 text-brand-primary pt-2 animate-pulse text-[11px] sm:text-xs">
+                  <span className="inline-block h-2 w-2 rounded-full bg-brand-primary shrink-0" />
                   <span>Processing security pipeline...</span>
                 </div>
               )}
@@ -205,8 +215,8 @@ export function AuditTerminal() {
           )}
 
           {activeTab === "json" && (
-            <div className="min-h-[280px] max-h-[420px] overflow-y-auto bg-surface-primary/80 rounded-xl p-4 border border-surface-border">
-              <pre className="text-emerald-400 font-mono text-xs whitespace-pre-wrap">
+            <div className="min-h-[260px] sm:min-h-[280px] max-h-[380px] sm:max-h-[420px] overflow-y-auto bg-surface-primary/80 rounded-xl p-3 sm:p-4 border border-surface-border">
+              <pre className="text-emerald-400 font-mono text-[11px] sm:text-xs whitespace-pre-wrap break-all">
                 {JSON.stringify(selectedScenario.verdictJson, null, 2)}
               </pre>
             </div>

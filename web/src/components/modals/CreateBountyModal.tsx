@@ -174,8 +174,8 @@ export function CreateBountyModal({ isOpen, onClose, onSuccess }: CreateBountyMo
     : "—";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg rounded-2xl border border-surface-border bg-surface-secondary p-6 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="relative w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl border border-surface-border bg-surface-secondary p-4 sm:p-6 shadow-2xl max-h-[90dvh] overflow-y-auto overscroll-contain">
         <div className="flex items-center justify-between border-b border-surface-border pb-4 mb-5">
           <div>
             <h2 className="text-lg font-bold text-content-primary">Create New Escrow Bounty</h2>
@@ -211,7 +211,7 @@ export function CreateBountyModal({ isOpen, onClose, onSuccess }: CreateBountyMo
             )}
             <button
               onClick={resetAll}
-              className="w-full rounded-lg bg-brand-primary text-black font-semibold text-xs py-2.5 hover:bg-brand-hover transition-colors"
+              className="w-full rounded-lg bg-brand-primary text-black font-semibold text-xs py-2.5 hover:bg-brand-hover transition-all active:scale-[0.98] min-h-[44px]"
             >
               Done & Return to Workspace
             </button>
@@ -234,7 +234,7 @@ export function CreateBountyModal({ isOpen, onClose, onSuccess }: CreateBountyMo
                 placeholder="https://github.com/bountra/core-contracts/issues/42"
                 value={issueUrl}
                 onChange={(e) => setIssueUrl(e.target.value)}
-                className="w-full rounded-lg border border-surface-border bg-surface-primary px-3.5 py-2 text-xs font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none"
+                className="w-full rounded-lg border border-surface-border bg-surface-primary px-3.5 py-2.5 text-sm sm:text-xs font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none"
               />
               <span className="block mt-1 text-[10px] text-content-muted">
                 The agent parses repo, issue requirements, and acceptance criteria from this URL.
@@ -254,7 +254,7 @@ export function CreateBountyModal({ isOpen, onClose, onSuccess }: CreateBountyMo
                     placeholder="100"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    className="w-full rounded-lg border border-surface-border bg-surface-primary px-3.5 py-2 text-xs font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none"
+                    className="w-full rounded-lg border border-surface-border bg-surface-primary px-3.5 py-2.5 text-sm sm:text-xs font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-mono text-content-muted">
                     USDT
@@ -269,7 +269,7 @@ export function CreateBountyModal({ isOpen, onClose, onSuccess }: CreateBountyMo
                 <select
                   value={durationDays}
                   onChange={(e) => setDurationDays(e.target.value)}
-                  className="w-full rounded-lg border border-surface-border bg-surface-primary px-3.5 py-2 text-xs font-mono text-content-primary focus:border-brand-primary focus:outline-none"
+                  className="w-full rounded-lg border border-surface-border bg-surface-primary px-3.5 py-2.5 text-sm sm:text-xs font-mono text-content-primary focus:border-brand-primary focus:outline-none"
                 >
                   <option value="7">7 Days</option>
                   <option value="14">14 Days</option>
@@ -294,7 +294,7 @@ export function CreateBountyModal({ isOpen, onClose, onSuccess }: CreateBountyMo
                     placeholder="e.g. 21"
                     value={customDays}
                     onChange={(e) => setCustomDays(e.target.value)}
-                    className="w-full rounded-lg border border-surface-border bg-surface-primary px-3.5 py-2 text-xs font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none"
+                    className="w-full rounded-lg border border-surface-border bg-surface-primary px-3.5 py-2.5 text-sm sm:text-xs font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-mono text-content-muted">
                     Days
@@ -340,7 +340,7 @@ export function CreateBountyModal({ isOpen, onClose, onSuccess }: CreateBountyMo
                   type="button"
                   onClick={handleApprove}
                   disabled={!isWalletActive || isApprovePending || isApproveConfirming}
-                  className="w-full flex items-center justify-center gap-2 rounded-lg bg-brand-primary text-black font-semibold text-xs py-2.5 hover:bg-brand-hover transition-colors disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-2 rounded-lg bg-brand-primary text-black font-semibold text-xs py-2.5 hover:bg-brand-hover transition-all active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
                 >
                   {isApprovePending || isApproveConfirming ? (
                     <>
@@ -356,7 +356,7 @@ export function CreateBountyModal({ isOpen, onClose, onSuccess }: CreateBountyMo
                   type="button"
                   onClick={handleCreate}
                   disabled={!isWalletActive || isCreatePending || isCreateConfirming}
-                  className="w-full flex items-center justify-center gap-2 rounded-lg bg-brand-primary text-black font-semibold text-xs py-2.5 hover:bg-brand-hover transition-colors disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-2 rounded-lg bg-brand-primary text-black font-semibold text-xs py-2.5 hover:bg-brand-hover transition-all active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
                 >
                   {isCreatePending || isCreateConfirming ? (
                     <>
@@ -372,7 +372,7 @@ export function CreateBountyModal({ isOpen, onClose, onSuccess }: CreateBountyMo
               <button
                 type="button"
                 onClick={resetAll}
-                className="w-full rounded-lg border border-surface-border bg-surface-tertiary text-content-secondary font-medium text-xs py-2 hover:bg-surface-primary hover:text-content-primary transition-colors"
+                className="w-full rounded-lg border border-surface-border bg-surface-tertiary text-content-secondary font-medium text-xs py-2 hover:bg-surface-primary hover:text-content-primary transition-all active:scale-[0.98] min-h-[44px]"
               >
                 Cancel
               </button>

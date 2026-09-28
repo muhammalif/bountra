@@ -246,7 +246,7 @@ export function ClaimBountyDrawer({
                 type="text"
                 disabled
                 value={address || "Please connect wallet"}
-                className="w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2 text-xs font-mono text-content-muted"
+                className="w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2.5 text-sm sm:text-xs font-mono text-content-muted"
               />
             </div>
 
@@ -259,7 +259,7 @@ export function ClaimBountyDrawer({
                 value={prUrl}
                 onChange={(e) => setPrUrl(e.target.value)}
                 placeholder="https://github.com/bountra/core-contracts/pull/43"
-                className="w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2 text-xs font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none"
+                className="w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2.5 text-sm sm:text-xs font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none"
               />
             </div>
 
@@ -272,7 +272,7 @@ export function ClaimBountyDrawer({
                 value={commitHash}
                 onChange={(e) => setCommitHash(e.target.value)}
                 placeholder="0x..."
-                className="w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2 text-xs font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none"
+                className="w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2.5 text-sm sm:text-xs font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none"
               />
             </div>
 
@@ -295,7 +295,7 @@ export function ClaimBountyDrawer({
                 value={signature}
                 onChange={(e) => setSignature(e.target.value)}
                 placeholder="0x... (65-byte ECDSA signature signed by agent 0x2e10...)"
-                className="w-full rounded-lg border border-surface-border bg-surface-primary p-2.5 text-[11px] font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none resize-none"
+                className="w-full rounded-lg border border-surface-border bg-surface-primary p-2.5 text-sm sm:text-[11px] font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none resize-none"
               />
             </div>
 
@@ -570,8 +570,8 @@ export function ClaimBountyDrawer({
   // ─── Main Drawer ───
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
-        <div className="w-screen max-w-md bg-surface-secondary border-l border-surface-border p-6 flex flex-col justify-between shadow-2xl overflow-y-auto">
+      <div className="absolute inset-y-0 right-0 max-w-full flex w-full sm:pl-10">
+        <div className="w-full sm:w-screen sm:max-w-md bg-surface-secondary border-l border-surface-border p-4 sm:p-6 flex flex-col justify-between shadow-2xl max-h-[100dvh] sm:max-h-none sm:h-auto overflow-y-auto overscroll-contain">
           <div>
             <div className="flex items-center justify-between border-b border-surface-border pb-4 mb-5">
               <div>
@@ -587,7 +587,7 @@ export function ClaimBountyDrawer({
               </div>
               <button
                 onClick={resetAll}
-                className="rounded-lg p-1.5 text-content-muted hover:bg-surface-tertiary hover:text-content-primary transition-colors"
+                className="rounded-lg p-2 -mr-1 text-content-muted hover:bg-surface-tertiary hover:text-content-primary transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -635,7 +635,7 @@ export function ClaimBountyDrawer({
               <button
                 onClick={handleClaim}
                 disabled={!isWalletActive || isClaimPending || isClaimConfirming || bounty.claimed}
-                className="w-full flex items-center justify-center gap-2 rounded-lg bg-brand-primary text-black font-semibold text-xs py-2.5 hover:bg-brand-hover transition-colors disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 rounded-lg bg-brand-primary text-black font-semibold text-xs py-2.5 hover:bg-brand-hover transition-all active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
               >
                 {isClaimPending || isClaimConfirming ? (
                   <>
@@ -649,7 +649,7 @@ export function ClaimBountyDrawer({
 
               <button
                 onClick={resetAll}
-                className="w-full rounded-lg border border-surface-border bg-surface-tertiary text-content-secondary font-medium text-xs py-2 hover:bg-surface-primary hover:text-content-primary transition-colors"
+                className="w-full rounded-lg border border-surface-border bg-surface-tertiary text-content-secondary font-medium text-xs py-2 hover:bg-surface-primary hover:text-content-primary transition-all active:scale-[0.98] min-h-[44px]"
               >
                 Cancel
               </button>
@@ -661,7 +661,7 @@ export function ClaimBountyDrawer({
             <div className="pt-4 border-t border-surface-border">
               <button
                 onClick={resetAll}
-                className="w-full rounded-lg border border-surface-border bg-surface-tertiary text-content-secondary font-medium text-xs py-2.5 hover:bg-surface-primary hover:text-content-primary transition-colors"
+                className="w-full rounded-lg border border-surface-border bg-surface-tertiary text-content-secondary font-medium text-xs py-2.5 hover:bg-surface-primary hover:text-content-primary transition-all active:scale-[0.98] min-h-[44px]"
               >
                 Close
               </button>

@@ -25,8 +25,8 @@ export function PipelineTracker({
   className
 }: PipelineTrackerProps) {
   return (
-    <div className={cn("w-full border-b border-surface-border bg-surface-secondary/60 p-4", className)}>
-      <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1">
+    <div className={cn("w-full border-b border-surface-border bg-surface-secondary/60 p-2.5 sm:p-4", className)}>
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
         {STAGES.map((stage) => {
           const isFinished = currentStage > stage.id || (currentStage === stage.id && isComplete);
           const isCurrent = currentStage === stage.id && !isComplete;
@@ -36,7 +36,7 @@ export function PipelineTracker({
             <div
               key={stage.id}
               className={cn(
-                "flex flex-1 min-w-[130px] items-center gap-2.5 rounded-lg border px-3 py-2 transition-all",
+                "flex shrink-0 sm:flex-1 min-w-[120px] sm:min-w-[130px] items-center gap-2 rounded-lg border px-2.5 py-1.5 sm:px-3 sm:py-2 transition-all",
                 isFinished && isPassed
                   ? "border-status-success/30 bg-status-success/10 text-status-success"
                   : isFailed
@@ -46,22 +46,22 @@ export function PipelineTracker({
                   : "border-surface-border bg-surface-primary/50 text-content-muted"
               )}
             >
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-current font-mono text-[10px] font-bold">
+              <div className="flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-full border border-current font-mono text-[9px] sm:text-[10px] font-bold">
                 {isFinished && isPassed ? (
-                  <CheckCircle2 className="h-4 w-4 text-status-success" />
+                  <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-status-success" />
                 ) : isFailed ? (
-                  <XCircle className="h-4 w-4 text-status-danger" />
+                  <XCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-status-danger" />
                 ) : isCurrent ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin text-brand-primary" />
+                  <Loader2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 animate-spin text-brand-primary" />
                 ) : (
                   <span>{stage.id}</span>
                 )}
               </div>
-              <div className="overflow-hidden">
-                <span className="block truncate font-mono text-xs font-semibold text-content-primary">
+              <div className="overflow-hidden min-w-0">
+                <span className="block truncate font-mono text-[11px] sm:text-xs font-semibold text-content-primary">
                   {stage.name}
                 </span>
-                <span className="block truncate font-mono text-[10px] text-content-secondary">
+                <span className="block truncate font-mono text-[9px] sm:text-[10px] text-content-secondary">
                   {stage.shortDesc}
                 </span>
               </div>
