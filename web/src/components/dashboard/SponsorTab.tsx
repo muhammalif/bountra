@@ -69,7 +69,7 @@ export function SponsorTab({ bounties, onCreateBounty, onRefresh }: SponsorTabPr
           <span className="text-[10px] font-mono uppercase text-content-muted">Sponsor Action</span>
           <button
             onClick={onCreateBounty}
-            className="mt-2 w-full flex items-center justify-center gap-1.5 rounded-lg bg-brand-primary text-black font-semibold text-xs py-2 hover:bg-brand-hover transition-all active:scale-95 min-h-[38px]"
+            className="mt-2 w-full flex items-center justify-center gap-1.5 rounded-lg bg-brand-primary text-black font-semibold text-xs py-2 hover:bg-brand-hover transition-all active:scale-95 min-h-[44px]"
           >
             <PlusCircle className="h-3.5 w-3.5" />
             <span>Fund New Bounty</span>
@@ -165,7 +165,7 @@ export function SponsorTab({ bounties, onCreateBounty, onRefresh }: SponsorTabPr
                       <button
                         onClick={() => handleRefund(b.id)}
                         disabled={isRefundingThis}
-                        className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/40 px-3 py-2 text-xs font-semibold transition-all active:scale-[0.98] disabled:opacity-50 min-h-[40px]"
+                        className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/40 px-3 py-2 text-xs font-semibold transition-all active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
                       >
                         {isRefundingThis ? (
                           <>

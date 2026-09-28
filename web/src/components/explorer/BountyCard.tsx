@@ -107,7 +107,7 @@ export function BountyCard({ bounty, onSelect }: BountyCardProps) {
         <div className="flex items-center gap-2 pt-1">
           <button
             onClick={() => onSelect(bounty)}
-            className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-surface-tertiary hover:bg-brand-primary hover:text-black text-content-primary px-3 py-2 text-xs font-semibold transition-colors min-h-[40px] active:scale-[0.98]"
+            className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-surface-tertiary hover:bg-brand-primary hover:text-black text-content-primary px-3 py-2 text-xs font-semibold transition-colors min-h-[44px] active:scale-[0.98]"
           >
             <span>
               {bounty.status === "claimed"

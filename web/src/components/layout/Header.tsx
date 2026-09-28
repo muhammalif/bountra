@@ -121,7 +121,7 @@ export function Header() {
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors min-h-[36px]",
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors min-h-[44px] active:scale-95",
                     isActive
                       ? "bg-surface-tertiary text-brand-primary font-semibold"
                       : "text-content-secondary hover:text-content-primary hover:bg-surface-tertiary/50"
@@ -141,7 +141,7 @@ export function Header() {
             onClick={() => setIsMenuOpen(true)}
             aria-label="Open navigation menu"
             aria-expanded={isMenuOpen}
-            className="md:hidden rounded-lg border border-surface-border bg-surface-tertiary p-2 text-content-primary hover:border-brand-primary/50 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center active:scale-95 shrink-0"
+            className="md:hidden rounded-lg border border-surface-border bg-surface-tertiary p-2 text-content-primary hover:border-brand-primary/50 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center active:scale-95 shrink-0"
           >
             <Menu className="h-4 w-4" />
           </button>
@@ -151,7 +151,7 @@ export function Header() {
               <button
                 type="button"
                 onClick={() => setIsDropdownOpen((prev) => !prev)}
-                className="flex items-center gap-1.5 sm:gap-2.5 px-2.5 sm:px-3 py-1.5 rounded-lg border border-surface-border bg-surface-tertiary hover:border-brand-primary/50 text-content-primary transition-all text-xs font-mono group active:scale-95 min-h-[36px]"
+                className="flex items-center gap-1.5 sm:gap-2.5 px-2.5 sm:px-3 py-1.5 rounded-lg border border-surface-border bg-surface-tertiary hover:border-brand-primary/50 active:border-brand-primary/50 text-content-primary transition-all text-xs font-mono group active:scale-95 min-h-[44px]"
               >
                 <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
                 <div className="flex flex-col text-left">
@@ -247,7 +247,7 @@ export function Header() {
                 type="button"
                 onClick={() => setIsMenuOpen(false)}
                 aria-label="Close navigation menu"
-                className="rounded-lg border border-surface-border bg-surface-tertiary p-2 text-content-primary hover:border-brand-primary/50 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center active:scale-95"
+                className="rounded-lg border border-surface-border bg-surface-tertiary p-2 text-content-primary hover:border-brand-primary/50 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center active:scale-95"
               >
                 <X className="h-4 w-4" />
               </button>

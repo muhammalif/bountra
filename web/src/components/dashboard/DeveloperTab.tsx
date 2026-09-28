@@ -81,7 +81,7 @@ export function DeveloperTab({ claims, onClaimBounty }: DeveloperTabProps) {
               ) : (
                 <button
                   onClick={() => onClaimBounty(item)}
-                  className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-brand-primary text-black font-semibold text-xs px-3 py-2 hover:bg-brand-hover transition-all active:scale-[0.98] min-h-[40px]"
+                  className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-brand-primary text-black font-semibold text-xs px-3 py-2 hover:bg-brand-hover transition-all active:scale-[0.98] min-h-[44px]"
                 >
                   <span>Claim Reward</span>
                   <ArrowRight className="h-3.5 w-3.5" />

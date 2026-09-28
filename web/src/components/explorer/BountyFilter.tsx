@@ -42,18 +42,18 @@ export function BountyFilter({
             placeholder="Search by repo, title, or keyword..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full rounded-lg border border-surface-border bg-surface-secondary pl-10 pr-4 py-2 sm:py-2 text-xs font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none transition-colors min-h-[40px]"
+            className="w-full rounded-lg border border-surface-border bg-surface-secondary pl-10 pr-4 py-2 sm:py-2 text-xs font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none transition-colors min-h-[44px]"
           />
         </div>
 
         <div className="flex items-center justify-between sm:justify-start gap-2 w-full sm:w-auto">
-          <div className="flex items-center gap-1.5 rounded-lg border border-surface-border bg-surface-secondary px-3 py-2 text-xs font-mono text-content-secondary min-h-[40px] flex-1 sm:flex-initial">
+          <div className="flex items-center gap-1.5 rounded-lg border border-surface-border bg-surface-secondary px-3 py-2 text-xs font-mono text-content-secondary min-h-[44px] flex-1 sm:flex-initial">
             <SlidersHorizontal className="h-3.5 w-3.5 text-content-muted shrink-0" />
             <span className="shrink-0">Sort:</span>
             <select
               value={sortBy}
               onChange={(e) => onSortChange(e.target.value)}
-              className="bg-transparent text-content-primary font-semibold focus:outline-none cursor-pointer w-full text-xs font-mono self-stretch min-h-[36px]"
+              className="bg-transparent text-content-primary font-semibold focus:outline-none cursor-pointer w-full text-xs font-mono self-stretch min-h-[44px]"
             >
               <option value="reward_desc" className="bg-surface-secondary text-content-primary">
                 Highest Reward

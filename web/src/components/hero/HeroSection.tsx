@@ -44,7 +44,7 @@ export function HeroSection({
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2.5 sm:gap-3 mb-8 sm:mb-12 w-full max-w-xs sm:max-w-none">
         <Link
           href="/explore"
-          className="px-5 py-2.5 rounded-lg bg-brand-primary text-black font-semibold text-xs sm:text-sm hover:bg-brand-hover transition-all flex items-center justify-center gap-2 shadow-sm active:scale-95 min-h-[42px]"
+          className="px-5 py-2.5 rounded-lg bg-brand-primary text-black font-semibold text-xs sm:text-sm hover:bg-brand-hover transition-all flex items-center justify-center gap-2 shadow-sm active:scale-95 min-h-[44px]"
         >
           <span>Explore Active Bounties</span>
           <ArrowDownRight className="w-4 h-4" />
@@ -53,7 +53,7 @@ export function HeroSection({
         {authenticated ? (
           <Link
             href="/dashboard"
-            className="px-5 py-2.5 rounded-lg border border-surface-border bg-surface-secondary text-content-primary font-semibold text-xs sm:text-sm hover:border-brand-primary/50 transition-all flex items-center justify-center gap-2 active:scale-95 min-h-[42px]"
+            className="px-5 py-2.5 rounded-lg border border-surface-border bg-surface-secondary text-content-primary font-semibold text-xs sm:text-sm hover:border-brand-primary/50 transition-all flex items-center justify-center gap-2 active:scale-95 min-h-[44px]"
           >
             <PlusCircle className="w-4 h-4 text-brand-primary" />
             <span>Create Bounty</span>
@@ -63,7 +63,7 @@ export function HeroSection({
             type="button"
             onClick={() => login()}
             disabled={!ready}
-            className="px-5 py-2.5 rounded-lg border border-surface-border bg-surface-secondary text-content-primary font-semibold text-xs sm:text-sm hover:border-brand-primary/50 transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed min-h-[42px]"
+            className="px-5 py-2.5 rounded-lg border border-surface-border bg-surface-secondary text-content-primary font-semibold text-xs sm:text-sm hover:border-brand-primary/50 transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed min-h-[44px]"
           >
             <PlusCircle className="w-4 h-4 text-brand-primary" />
             <span>Sign In to Create</span>

@@ -39,7 +39,7 @@ export function DashboardHeader({
             "flex items-center gap-2 px-3 sm:px-4 py-2.5 font-mono text-xs font-medium border-b-2 transition-colors -mb-px shrink-0 min-h-[40px]",
             activeTab === "sponsor"
               ? "border-brand-primary text-brand-primary"
-              : "border-transparent text-content-secondary hover:text-content-primary"
+              : "border-transparent text-content-secondary hover:text-content-primary active:text-content-primary active:bg-surface-tertiary"
           )}
         >
           <ShieldCheck className="h-4 w-4 shrink-0" />
@@ -52,7 +52,7 @@ export function DashboardHeader({
             "flex items-center gap-2 px-3 sm:px-4 py-2.5 font-mono text-xs font-medium border-b-2 transition-colors -mb-px shrink-0 min-h-[40px]",
             activeTab === "developer"
               ? "border-brand-primary text-brand-primary"
-              : "border-transparent text-content-secondary hover:text-content-primary"
+              : "border-transparent text-content-secondary hover:text-content-primary active:text-content-primary active:bg-surface-tertiary"
           )}
         >
           <Code className="h-4 w-4 shrink-0" />

@@ -97,7 +97,7 @@ export default function ExplorePage() {
           <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={() => setIsCreateModalOpen(true)}
-              className="w-full sm:w-auto px-4 py-2.5 rounded-lg bg-brand-primary text-black font-semibold text-xs hover:bg-brand-hover transition-all flex items-center justify-center gap-2 shadow-sm min-h-[42px] active:scale-95"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-lg bg-brand-primary text-black font-semibold text-xs hover:bg-brand-hover transition-all flex items-center justify-center gap-2 shadow-sm min-h-[44px] active:scale-95"
             >
               <PlusCircle className="w-4 h-4" />
               <span>Create Bounty Escrow</span>

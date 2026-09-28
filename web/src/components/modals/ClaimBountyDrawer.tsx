@@ -587,7 +587,7 @@ export function ClaimBountyDrawer({
               </div>
               <button
                 onClick={resetAll}
-                className="rounded-lg p-2 -mr-1 text-content-muted hover:bg-surface-tertiary hover:text-content-primary transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
+                className="rounded-lg p-2 -mr-1 text-content-muted hover:bg-surface-tertiary hover:text-content-primary transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center active:scale-95"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -629,9 +629,11 @@ export function ClaimBountyDrawer({
             )}
           </div>
 
-          {/* Action buttons — for developer claim mode */}
+          {/* Action buttons — for developer claim mode. Sticky on mobile so the
+              primary action stays reachable when the virtual keyboard shrinks
+              the drawer to a fraction of the viewport. */}
           {!isClaimSuccess && mode === "claim" && (
-            <div className="pt-4 border-t border-surface-border flex flex-col gap-2">
+            <div className="sticky bottom-0 bg-surface-secondary pt-4 border-t border-surface-border flex flex-col gap-2 -mx-4 px-4 pb-1 sm:mx-0 sm:px-0 sm:pb-0">
               <button
                 onClick={handleClaim}
                 disabled={!isWalletActive || isClaimPending || isClaimConfirming || bounty.claimed}
