@@ -178,6 +178,39 @@ export async function getLatestAuditForBounty(bountyId: number, dbInstance = db)
 }
 
 /**
+ * Latest AI verdict per bounty, keyed by on-chain bounty id.
+ *
+ * The Explore feed renders on-chain bounties next to their audit outcome, so it
+ * needs verdicts in one round trip. On-chain status only knows open/claimed/
+ * cancelled — the AI verdict lives only in SQLite, and a bounty the agent
+ * rejected still reads as "open" to the contract, so the feed would otherwise
+ * advertise work that is no longer claimable.
+ *
+ * Keyed by the newest audit row per bounty: a re-audit supersedes an earlier
+ * rejection, and the feed should show the current one.
+ */
+export async function listLatestVerdictsByBounty(dbInstance = db) {
+  const rows = await dbInstance
+    .select({
+      bountyId: schema.auditLogs.bountyId,
+      status: schema.auditLogs.status,
+      aiVerdict: schema.auditLogs.aiVerdict,
+      aiScore: schema.auditLogs.aiScore,
+      aiComment: schema.auditLogs.aiComment,
+      auditId: schema.auditLogs.id,
+    })
+    .from(schema.auditLogs)
+    .orderBy(desc(schema.auditLogs.id))
+    .all();
+
+  const latest = new Map<number, (typeof rows)[number]>();
+  for (const row of rows) {
+    if (!latest.has(row.bountyId)) latest.set(row.bountyId, row);
+  }
+  return latest;
+}
+
+/**
  * Reusable audit verdict for an already-audited claim.
  *
  * This is the A2 cache. It deliberately reuses `audit_logs` rather than adding a

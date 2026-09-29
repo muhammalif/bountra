@@ -14,6 +14,42 @@ const standaloneClient = createPublicClient({
 });
 
 /**
+ * Verdict overlay from the Bountra Agent.
+ *
+ * On-chain status is authoritative for money: claimed and cancelled come from
+ * the contract and are never overridden here. The AI verdict only decides how
+ * an unclaimed bounty is *presented* — a rejected audit means the work is no
+ * longer claimable, but the escrow is untouched, so the bounty stays listed.
+ */
+export interface AgentVerdict {
+  status: string;
+  verdict: string | null;
+  score: number | null;
+  comment: string | null;
+  auditId: number;
+}
+
+function overlayVerdict(
+  chainStatus: BountyItem["status"],
+  audit?: AgentVerdict
+): BountyItem["status"] {
+  // Money state already settled or cancelled on-chain: nothing to overlay.
+  if (chainStatus === "claimed" || chainStatus === "cancelled") return chainStatus;
+  if (!audit) return chainStatus;
+
+  switch (audit.status) {
+    case "failed":
+      return "rejected";
+    case "claimed":
+      return "claimed";
+    case "passed":
+      return "ready_to_claim";
+    default:
+      return chainStatus;
+  }
+}
+
+/**
  * Reads all bounties from the BountraEscrow smart contract on BSC Testnet.
  * Returns them as BountyItem[] so they can be merged with mock data.
  * Also exposes a `refetch` function so UI can refresh after createBounty/cancelBounty.
@@ -46,6 +82,21 @@ export function useOnChainBounties() {
         return;
       }
 
+      // Audit verdicts live only in the agent's SQLite, never on-chain, so they
+      // are fetched separately and merged in below. A failure here must not
+      // hide the bounties themselves — it only means the feed falls back to
+      // showing the raw on-chain status.
+      let verdicts: Record<string, AgentVerdict> = {};
+      try {
+        const res = await fetch("/api/agent/bounties/statuses", { cache: "no-store" });
+        if (res.ok) {
+          const body = (await res.json()) as { data?: Record<string, AgentVerdict> };
+          verdicts = body.data ?? {};
+        }
+      } catch {
+        // Agent offline: fall through with no overlay.
+      }
+
       const results: BountyItem[] = [];
 
       for (let i = 0; i < total; i++) {
@@ -71,6 +122,7 @@ export function useOnChainBounties() {
           let status: BountyItem["status"] = "open";
           if (data.claimed) status = "claimed";
           else if (data.cancelled) status = "cancelled";
+          status = overlayVerdict(status, verdicts[i]);
 
           let repo = "bountra/core-contracts";
           let issueNumber = i + 1;

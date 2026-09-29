@@ -9,7 +9,8 @@ import {
   updateAuditLog,
   getLatestAuditForBounty,
   findReusableAudit,
-  listPassedAuditsByDeveloper
+  listPassedAuditsByDeveloper,
+  listLatestVerdictsByBounty
 } from "../db/index.js";
 import {
   requireAgentSigningKey,
@@ -37,6 +38,30 @@ export async function apiRoutes(app: FastifyInstance) {
     const { status } = request.query;
     const bounties = await listBounties(status);
     return { data: bounties };
+  });
+
+  /**
+   * Latest audit verdict per bounty id, for the Explore feed.
+   *
+   * Registered before `/api/bounties/:id` on purpose: Fastify's router would
+   * otherwise read "statuses" as a bounty id and answer 400.
+   */
+  app.get("/api/bounties/statuses", async () => {
+    const latest = await listLatestVerdictsByBounty();
+    return {
+      data: Object.fromEntries(
+        [...latest.entries()].map(([bountyId, row]) => [
+          bountyId,
+          {
+            status: row.status,
+            verdict: row.aiVerdict,
+            score: row.aiScore,
+            comment: row.aiComment,
+            auditId: row.auditId
+          }
+        ])
+      )
+    };
   });
 
   // Get single bounty with latest audit log
