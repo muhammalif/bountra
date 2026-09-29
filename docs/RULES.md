@@ -173,3 +173,61 @@
 - ❌ Never deploy to mainnet during hackathon
 - ❌ Never add decorative animations (confetti, parallax, 3D cards)
 - ❌ Never use motivational/hype language in UI copy
+
+## Claim authorization
+
+A claim signature authorizes moving escrowed ERC-20 funds. Treat issuing one as a
+privileged operation.
+
+- **A signature may only be issued from a stored passing audit.** The agent must
+  look up an existing `audit_logs` row matching `(bountyId, prUrl, commitHash,
+  developer)` and refuse otherwise. Never re-run the evaluator to mint a
+  signature: provider quota is not the issue — a verdict can flip between runs,
+  which would silently revoke an authorization the developer already holds.
+- **Never fall back to a default signing key.** `AGENT_PRIVATE_KEY` unset must
+  throw. The previous fallback was Anvil account #0, a key published in every
+  Foundry tutorial, so a misconfigured deployment produced signatures that
+  verified against a publicly known address. Fail loudly instead.
+- **`bountyId` 0 is a valid escrow index.** Guard with `=== undefined`, never
+  `!bountyId`.
+- **Recovery in tests must mirror the contract exactly.** `BountraEscrow`
+  recovers the *raw* hash with no EIP-191 prefix, and so does viem's
+  `signMessage({ raw })` for a 32-byte message. Adding a prefix in a test makes
+  a valid signature look forged and hides real regressions.
+- **Wallet signature is not transaction success.** A signature proves the bytes
+  were authorized; only a receipt, the `BountyClaimed` event, and the resulting
+  ERC-20 transfer prove the claim landed.
+
+## Developer Hub claim rows
+
+A claim row is the intersection of two independent facts, and neither one alone
+is sufficient:
+
+- the bounty id exists in the escrow contract, and
+- the agent has a passing audit for `(bountyId, prUrl, commitHash, developer)`
+  where `developer` is the connected wallet.
+
+On-chain state knows nothing about the audit trail, so it cannot say a bounty is
+claimable. Mock data knows nothing about the chain, so it invents ids that
+`claimBounty()` rejects. Only where both agree does a usable agent signature
+exist. Never widen this to a union, and never fall back to mock rows to keep the
+list from looking empty.
+
+## Evidence levels
+
+Do not let these collapse into the word "done". State the highest level actually
+proven:
+
+1. **implemented** — the code exists and type-checks.
+2. **build success** — `pnpm build` exited 0 *and* produced a valid `.next`.
+   A shell `EXIT=0` is not this: if the build died, the wrapper still reports 0.
+   Always confirm the artifact exists before believing it.
+3. **tests pass** — the named suite ran, with the count shown.
+4. **browser verified** — measured in a real browser at real viewport widths.
+5. **connected-wallet verified** — a human approved a real wallet prompt.
+6. **on-chain verified** — a receipt shows success, the expected event was
+   emitted, and the token balance actually moved.
+
+Levels 5 and 6 cannot be substituted by a signature, a transaction hash, or a
+successful wallet popup. A wallet signature proves bytes were authorized; only
+the receipt and the emitted event prove the claim settled.

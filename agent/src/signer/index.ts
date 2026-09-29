@@ -82,3 +82,23 @@ export async function verifyClaimSignature(
     signature
   });
 }
+
+/**
+ * Resolves the agent's signing key, or throws.
+ *
+ * The previous code fell back to Anvil account #0 when AGENT_PRIVATE_KEY was
+ * unset. That key is published in every Foundry/Anvil tutorial, so a
+ * misconfigured deployment would happily produce signatures that look valid and
+ * verify on-chain against a publicly known key. Refusing to start is the only
+ * safe failure mode for a key whose only job is authorizing fund movement.
+ */
+export function requireAgentSigningKey(): Hex {
+  const key = process.env.AGENT_PRIVATE_KEY;
+  if (!key) {
+    throw new Error(
+      "AGENT_PRIVATE_KEY is not set. The agent refuses to sign claims without an explicit key; " +
+        "a fallback key here would be a publicly known test key."
+    );
+  }
+  return key as Hex;
+}

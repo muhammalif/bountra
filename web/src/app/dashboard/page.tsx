@@ -12,6 +12,7 @@ import { CreateBountyModal } from "@/components/modals/CreateBountyModal";
 import { ClaimBountyDrawer } from "@/components/modals/ClaimBountyDrawer";
 import { INITIAL_BOUNTIES } from "@/lib/mock-bounties";
 import { useOnChainBounties } from "@/hooks/useOnChainBounties";
+import { useClaimEligibility } from "@/hooks/useClaimAuthorization";
 import { BountyItem } from "@/types/bounty";
 import { LogIn, ArrowRight } from "lucide-react";
 
@@ -47,17 +48,27 @@ export default function DashboardPage() {
     return mock;
   }, [address, onChainBounties]);
 
-  // Developer Hub claims. Mock rows carry synthetic ids that do not exist on
-  // chain, and claimBounty reverts with BountyNotFound() for them, so a mock
-  // row is only offered when a real bounty backs the same id.
-  const devClaims = useMemo(() => {
-    const claimed = INITIAL_BOUNTIES.filter(
-      (b) => b.status === "claimed" || b.status === "ready_to_claim"
-    );
-    return claimed
-      .map((b) => onChainBounties.find((c) => c.id === b.id))
-      .filter((c): c is NonNullable<typeof c> => Boolean(c));
-  }, [onChainBounties]);
+  // The claimable list is the intersection of two independent sources: a bounty
+  // that actually exists in the escrow, and an audit the agent passed for THIS
+  // connected developer. Both are required.
+  //
+  // Neither alone is sufficient. On-chain state knows nothing about the audit
+  // trail, so it cannot say a bounty is claimable; mock status knows nothing
+  // about the chain, so it happily invents ids that claimBounty() rejects. A row
+  // appears only when the contract and the agent agree on it, which is also the
+  // only case where a usable agent signature exists.
+  const { eligible } = useClaimEligibility(address);
+
+  const devClaims = useMemo(
+    () =>
+      eligible
+        .map((e) => {
+          const onChain = onChainBounties.find((c) => c.id === e.bountyId);
+          return onChain ? { ...onChain, audit: e } : null;
+        })
+        .filter((c): c is NonNullable<typeof c> => Boolean(c)),
+    [eligible, onChainBounties]
+  );
 
   const isUserLoggedIn = Boolean((ready && authenticated) || (isConnected && Boolean(address)));
 

@@ -19,6 +19,8 @@ dist/
 # Database
 agent/data/*.db
 agent/data/*.db-journal
+agent/data/*.db-shm
+agent/data/*.db-wal
 
 # OS
 .DS_Store

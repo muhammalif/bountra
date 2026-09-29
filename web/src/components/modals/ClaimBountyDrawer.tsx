@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { usePrivy } from "@privy-io/react-auth";
-import { X, ExternalLink, ShieldCheck, CheckCircle2, Loader2, Sparkles, AlertCircle, Clock, Eye, GitPullRequest, ArrowRight, Zap } from "lucide-react";
+import { X, ExternalLink, ShieldCheck, CheckCircle2, Loader2, Sparkles, AlertCircle, Clock, Eye, GitPullRequest, ArrowRight } from "lucide-react";
 import { BountyItem } from "@/types/bounty";
 import { BOUNTRA_ESCROW_ADDRESS, BOUNTRA_ESCROW_ABI } from "@/config/contracts";
-import { AUDIT_SCENARIOS } from "@/components/terminal/audit-scenarios";
 import { formatBscScanUrl, formatAddress } from "@/lib/utils";
+import { useClaimEligibility, useClaimAuthorization } from "@/hooks/useClaimAuthorization";
 import { cn } from "@/lib/utils";
 
 interface ClaimBountyDrawerProps {
@@ -30,29 +30,58 @@ export function ClaimBountyDrawer({
   const address = wagmiAddress || (user?.wallet?.address as `0x${string}` | undefined);
   const isWalletActive = Boolean(isConnected || authenticated);
 
-  const [showSubmitProof, setShowSubmitProof] = useState(false);
   const [prUrl, setPrUrl] = useState("");
   const [commitHash, setCommitHash] = useState("");
   const [signature, setSignature] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // Claimability is a fact about the agent's audit trail, not about mock status:
+  // a bounty is only claimable when the agent holds a passing signature for
+  // THIS bounty and THIS developer. Deriving it from mock rows is what let a
+  // bounty that does not exist on chain reach claimBounty().
+  const { eligible } = useClaimEligibility(mode === "claim" ? address : undefined);
+  const { authorize, isLoading: isAuthorizing } = useClaimAuthorization();
+
+  const eligibleAudit = useMemo(
+    () => (bounty ? eligible.find((e) => e.bountyId === bounty.id) : undefined),
+    [eligible, bounty]
+  );
+
+  // Prefill the claim parameters for the current bounty. The signature is
+  // fetched from the agent rather than prefilled from a hardcoded fixture: it
+  // is bound to (bounty, developer, commit, pr, contract, chain), so any other
+  // source would produce a signature the contract rejects.
   useEffect(() => {
-    if (bounty) {
-      if (bounty.status === "ready_to_claim") {
-        const cleanScenario = AUDIT_SCENARIOS[0];
-        setPrUrl(`https://github.com/${cleanScenario.repo}/pull/${cleanScenario.prNumber}`);
-        setCommitHash("0x7f8a92b456381029384756281928475629102938");
-        setSignature(cleanScenario.signatureData?.signature || "");
-        setShowSubmitProof(true);
-      } else {
-        setPrUrl(`${bounty.issueUrl.replace("/issues/", "/pull/")}`);
-        setCommitHash("0xa4b19c8f0293d8b871928471c9a1028471928471");
-        setSignature("");
-        setShowSubmitProof(false);
+    if (!bounty) return;
+
+    const pr = bounty.issueUrl.replace("/issues/", "/pull/");
+    const commit = "0xa4b19c8f0293d8b871928471c9a1028471928471";
+
+    setPrUrl(pr);
+    setCommitHash(commit);
+    setSignature("");
+    setErrorMsg(null);
+
+    if (mode !== "claim" || !address || !eligibleAudit) return;
+
+    let cancelled = false;
+    (async () => {
+      const result = await authorize({
+        bountyId: bounty.id,
+        prUrl: eligibleAudit.prUrl,
+        commitHash: eligibleAudit.commitHash,
+        devWallet: address,
+      });
+      if (cancelled) return;
+      if (result?.signature) {
+        setPrUrl(eligibleAudit.prUrl);
+        setCommitHash(eligibleAudit.commitHash);
+        setSignature(result.signature);
       }
-      setErrorMsg(null);
-    }
-  }, [bounty]);
+    })();
+
+    return () => { cancelled = true; };
+  }, [bounty, address, mode, eligibleAudit, authorize]);
 
   const {
     writeContract: writeClaim,
@@ -82,16 +111,6 @@ export function ClaimBountyDrawer({
   }, [isOpen, onClose]);
 
   if (!isOpen || !bounty) return null;
-
-  const handleAutofillDemoProof = () => {
-    const cleanScenario = AUDIT_SCENARIOS[0];
-    if (cleanScenario && cleanScenario.signatureData) {
-      setPrUrl(`https://github.com/${cleanScenario.repo}/pull/${cleanScenario.prNumber}`);
-      setCommitHash("0x7f8a92b456381029384756281928475629102938");
-      setSignature(cleanScenario.signatureData.signature);
-      setErrorMsg(null);
-    }
-  };
 
   const handleClaim = () => {
     setErrorMsg(null);
@@ -215,100 +234,10 @@ export function ClaimBountyDrawer({
       </span>
     );
   };
-
-  // ─── Ready to Claim: Public vs Developer Claim View ───
+  // ─── Ready to Claim: public read-only view ───
+  // Claim mode never reaches this function: the developer's own submission is
+  // rendered by renderClaimForm, which exists for every non-claimed status.
   const renderReadyToClaimContent = () => {
-    if (mode === "claim") {
-      return (
-        <div className="space-y-4">
-          {renderBountyMeta()}
-
-          <div className="p-4 rounded-xl border border-brand-primary/30 bg-brand-primary/10">
-            <div className="flex items-start gap-3">
-              <Sparkles className="h-6 w-6 text-brand-primary shrink-0" />
-              <div>
-                <h4 className="text-xs font-semibold text-brand-primary mb-0.5">
-                  Audit Passed (Score: 96/100) — Claim Authorization Ready
-                </h4>
-                <p className="text-[11px] text-content-secondary leading-relaxed">
-                  Bountra Agent has signed your submission. Review the claim parameters below and execute on-chain settlement to receive {bounty.amountFormatted} {bounty.tokenSymbol}.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <div>
-              <label className="block text-xs font-mono font-medium text-content-secondary mb-1">
-                Claimant Wallet (Beneficiary)
-              </label>
-              <input
-                type="text"
-                disabled
-                value={address || "Please connect wallet"}
-                className="w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2.5 text-sm sm:text-xs font-mono text-content-muted"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-mono font-medium text-content-secondary mb-1">
-                GitHub Pull Request URL
-              </label>
-              <input
-                type="url"
-                value={prUrl}
-                onChange={(e) => setPrUrl(e.target.value)}
-                placeholder="https://github.com/bountra/core-contracts/pull/43"
-                className="w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2.5 text-sm sm:text-xs font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-mono font-medium text-content-secondary mb-1">
-                Audited Commit Hash
-              </label>
-              <input
-                type="text"
-                value={commitHash}
-                onChange={(e) => setCommitHash(e.target.value)}
-                placeholder="0x..."
-                className="w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2.5 text-sm sm:text-xs font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-mono font-medium text-content-secondary">
-                  Bountra Agent Cryptographic Signature
-                </label>
-                <button
-                  type="button"
-                  onClick={handleAutofillDemoProof}
-                  className="text-[10px] font-mono text-brand-primary hover:underline hover:text-brand-hover inline-flex items-center gap-1"
-                >
-                  <Zap className="h-3 w-3" />
-                  <span>Autofill test signature</span>
-                </button>
-              </div>
-              <textarea
-                rows={3}
-                value={signature}
-                onChange={(e) => setSignature(e.target.value)}
-                placeholder="0x... (65-byte ECDSA signature signed by agent 0x2e10...)"
-                className="w-full rounded-lg border border-surface-border bg-surface-primary p-2.5 text-sm sm:text-[11px] font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none resize-none"
-              />
-            </div>
-
-            {errorMsg && (
-              <div className="p-3 rounded-lg border border-status-danger/30 bg-red-950/20 text-xs text-status-danger font-mono flex items-start gap-2">
-                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                <span>{errorMsg}</span>
-              </div>
-            )}
-          </div>
-        </div>
-      );
-    }
 
     return (
       <div className="space-y-4">
@@ -368,6 +297,100 @@ export function ClaimBountyDrawer({
             <span>Claim in Developer Hub</span>
             <ArrowRight className="h-3 w-3" />
           </a>
+        </div>
+      </div>
+    );
+  };
+
+
+  // ─── Claim form: the developer's own submission ───
+  // Rendered for EVERY non-claimed status in claim mode. Previously the form was
+  // nested inside renderReadyToClaimContent, so a bounty whose status was
+  // derived from chain state (always "open") fell through to renderOpenContent
+  // and the drawer showed issue instructions with no inputs, no error surface,
+  // and a Claim button that silently did nothing.
+  const renderClaimForm = () => {
+    if (mode !== "claim") return null;
+
+    return (
+      <div className="space-y-4">
+        {renderBountyMeta()}
+
+        <div className="p-4 rounded-xl border border-brand-primary/30 bg-brand-primary/10">
+          <div className="flex items-start gap-3">
+            <ShieldCheck className="h-6 w-6 text-brand-primary shrink-0" />
+            <div>
+              <h4 className="text-xs font-semibold text-brand-primary mb-0.5">
+                Settle this bounty from escrow
+              </h4>
+              <p className="text-[11px] text-content-secondary leading-relaxed">
+                {eligibleAudit
+                  ? `Bountra Agent signed this submission (score ${eligibleAudit.score}/100). Executing the claim releases the escrowed funds to your wallet.`
+                  : "Your claim parameters must match an audit the agent has already passed for this bounty. The agent issues the signature, not the browser."}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <div>
+            <label className="block text-xs font-mono font-medium text-content-secondary mb-1">
+              Claimant Wallet (Beneficiary)
+            </label>
+            <input
+              type="text"
+              disabled
+              value={address || "Please connect wallet"}
+              className="w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2.5 text-sm sm:text-xs font-mono text-content-muted"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-mono font-medium text-content-secondary mb-1">
+              GitHub Pull Request URL
+            </label>
+            <input
+              type="url"
+              value={prUrl}
+              onChange={(e) => setPrUrl(e.target.value)}
+              placeholder="https://github.com/bountra/core-contracts/pull/43"
+              className="w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2.5 text-sm sm:text-xs font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-mono font-medium text-content-secondary mb-1">
+              Audited Commit Hash
+            </label>
+            <input
+              type="text"
+              value={commitHash}
+              onChange={(e) => setCommitHash(e.target.value)}
+              placeholder="0x..."
+              className="w-full rounded-lg border border-surface-border bg-surface-primary px-3 py-2.5 text-sm sm:text-xs font-mono text-content-primary placeholder:text-content-muted focus:border-brand-primary focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-mono font-medium text-content-secondary mb-1">
+              Bountra Agent Cryptographic Signature
+            </label>
+            <textarea
+              rows={3}
+              readOnly
+              value={signature}
+              placeholder={
+                isAuthorizing
+                  ? "Requesting authorization from Bountra Agent..."
+                  : "No agent signature available for this bounty."
+              }
+              className="w-full rounded-lg border border-surface-border bg-surface-primary p-2.5 text-sm sm:text-[11px] font-mono text-content-primary placeholder:text-content-muted resize-none"
+            />
+            <p className="text-[10px] font-mono text-content-muted mt-1 leading-relaxed">
+              Issued by the agent for this exact bounty, PR, commit and wallet. Not editable,
+              and not transferable to another bounty.
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -593,7 +616,19 @@ export function ClaimBountyDrawer({
               </button>
             </div>
 
-            {isClaimSuccess ? (
+            {errorMsg && (
+              <div
+                role="alert"
+                className="mb-4 p-3 rounded-lg border border-status-danger/30 bg-red-950/20 text-xs text-status-danger font-mono flex items-start gap-2"
+              >
+                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
+            {mode === "claim" && bounty.status !== "claimed" ? (
+              renderClaimForm()
+            ) : isClaimSuccess ? (
               <div className="py-10 flex flex-col items-center text-center">
                 <CheckCircle2 className="h-14 w-14 text-status-success mb-3 animate-bounce" />
                 <h3 className="text-lg font-bold text-content-primary mb-1">
@@ -614,10 +649,6 @@ export function ClaimBountyDrawer({
                   </a>
                 )}
               </div>
-            ) : bounty.status === "in_review" ? (
-              renderInReviewContent()
-            ) : bounty.status === "ready_to_claim" ? (
-              renderReadyToClaimContent()
             ) : bounty.status === "claimed" ? (
               renderClaimedContent()
             ) : bounty.status === "rejected" ? (
@@ -632,17 +663,34 @@ export function ClaimBountyDrawer({
           {/* Action buttons — for developer claim mode. Sticky on mobile so the
               primary action stays reachable when the virtual keyboard shrinks
               the drawer to a fraction of the viewport. */}
-          {!isClaimSuccess && mode === "claim" && (
+          {mode === "claim" && !isClaimSuccess && (
             <div className="sticky bottom-0 bg-surface-secondary pt-4 border-t border-surface-border flex flex-col gap-2 -mx-4 px-4 pb-1 sm:mx-0 sm:px-0 sm:pb-0">
+              {!isWalletActive && (
+                <p className="text-[11px] font-mono text-content-muted text-center">
+                  Connect your developer wallet to claim.
+                </p>
+              )}
+              {isWalletActive && !eligibleAudit && !isAuthorizing && (
+                <p className="text-[11px] font-mono text-content-muted text-center leading-relaxed">
+                  This bounty is not claimable yet. Bountra Agent has not issued a signature
+                  for your submission on it.
+                </p>
+              )}
+
               <button
                 onClick={handleClaim}
-                disabled={!isWalletActive || isClaimPending || isClaimConfirming || bounty.claimed}
+                disabled={!isWalletActive || isClaimPending || isClaimConfirming || bounty.claimed || isAuthorizing || !signature}
                 className="w-full flex items-center justify-center gap-2 rounded-lg bg-brand-primary text-black font-semibold text-xs py-2.5 hover:bg-brand-hover transition-all active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
               >
                 {isClaimPending || isClaimConfirming ? (
                   <>
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     <span>Executing Escrow Claim on BSC Testnet...</span>
+                  </>
+                ) : isAuthorizing ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <span>Requesting agent authorization...</span>
                   </>
                 ) : (
                   <span>Claim {bounty.amountFormatted} {bounty.tokenSymbol} Now</span>

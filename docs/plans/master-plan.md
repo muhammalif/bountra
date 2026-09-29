@@ -16,6 +16,7 @@ track: [AI Agents, Finance & Commerce]
 > AI Agent yang mengaudit Pull Request GitHub secara mandiri dan langsung merilis pencairan dana bounty/escrow on-chain di BNB Chain tanpa review manual yang lambat.
 
 Related: [[_MOC/Index|Knowledge Map]] · [[Projects/BNB Hackathon 2026 - Project Candidates|Candidate Comparison Note]]
+Claim flow detail: `docs/CLAIM-FLOW.md`
 
 ---
 
@@ -214,11 +215,11 @@ Related: [[_MOC/Index|Knowledge Map]] · [[Projects/BNB Hackathon 2026 - Project
 * **Customer-Facing Branding:** Auditor = **Bountra Agent** (pipeline tracker, live terminal, report 5-layer). `Gemini Flash` = detail provider backend, tidak tampil di UI publik.
 * **Deployed Smart Contract:**
   * **Network:** BSC Testnet (Chain ID `97`)
-  * **Contract Address:** `0xbe576879961Bd8cdf7CfA72F146C8a3E352c7260` (TVL Terkunci: 800 USDT di 4 bounty on-chain #0..#3)
+  * **Contract Address:** `0xbe576879961Bd8cdf7CfA72F146C8a3E352c7260` (TVL Terkunci: 800 USDT di 5 bounty on-chain #0..#4)
   * **Mock USDT Address:** `0x189C7cA448e89DaF1C2A1C9a4DB4D9Ec475441c1` (Decimals: 18)
   * **Agent Signer:** `0x2e10F4a41F665c657Ff4deC4A780e8734A066848`
   * **Explorer:** [BscScan Testnet](https://testnet.bscscan.com/address/0xbe576879961Bd8cdf7CfA72F146C8a3E352c7260)
-* **Agent Backend Engine:** Fastify REST API + Viem Signer + Gemini Flash + Drizzle SQLite (20/20 tests PASS).
+* **Agent Backend Engine:** Fastify REST API + Viem Signer + Gemini Flash + Drizzle SQLite (27/27 tests PASS).
 * **Frontend Multi-Page dApp:** Next.js 14 App Router (`/`, `/explore`, `/dashboard`) + Privy Auth & Embedded Wallet + Wagmi v2.
 * **Submission Materials:** `README.md`, `docs/DEMO_SCRIPT.md`, `docs/PITCH.md`.
 
@@ -226,15 +227,49 @@ Related: [[_MOC/Index|Knowledge Map]] · [[Projects/BNB Hackathon 2026 - Project
 
 Code-complete is not the same as demo-complete. These are open:
 
-- **`pnpm build` in `web/` skips type-checking and linting** (`Skipping validation of types`, `Skipping linting`), so a green build does not prove type safety. The recent CSS-only edits were not type-verified.
-- **Populated dashboard unverified.** `/dashboard` has only ever been rendered behind the wallet gate with no connected wallet. The dense table, the mobile card view, and the claim signing flow have not been exercised against real on-chain data.
-- **First audit on a new PR is still slow or can fail.** Caching removes the cost of *repeat* calls only. A first call on an unseen PR measured 10.9s on success and 23.4s before a 503, because the provider intermittently returns 503 under load. Retry and failover reduce the risk; they do not eliminate it. Pre-audit the demo PRs before presenting.
-- **Touch targets were below 44px until the §9.5 gate audit.** Header nav was 36px, dashboard buttons 38–40px, hero CTAs 42px. All raised to 44px; the checklist was only ticked after re-measuring.
-- **`docs/PRD.md` acceptance boxes and `docs/DESIGN.md` §9.5 were unchecked despite the work being done** — the docs trailed the code by several milestones.
+- **Claim flow is implemented but NOT end-to-end verified.** The agent now issues
+  signatures on demand (`/api/claim/authorize`), the drawer consumes them, and the
+  dashboard only lists bounties where the contract and the agent agree. No
+  successful on-chain claim has been proven: no receipt, no `BountyClaimed` event,
+  no confirmed ERC-20 transfer. See `docs/CLAIM-FLOW.md`.
+- **Mock claim path does not exist.** The hybrid model is half built. On-chain
+  bounties with a valid agent signature are claimable; mock bounties are display
+  only. No mock claim was faked, because a mock id sent to `claimBounty()` reverts
+  with `BountyNotFound()`.
+- **A published Anvil key was used as the signing fallback.** `AGENT_PRIVATE_KEY`
+  unset previously fell back to Anvil account #0, a key published in every Foundry
+  tutorial. Replaced with `requireAgentSigningKey()`, which throws. Any signature
+  issued before that fix under a missing-key config must be treated as suspect.
+- **Production build works, but only after checking the artifact.** The first
+  attempts stalled at `Creating an optimized production build` while machine load
+  averaged 251 (Brave Browser at 80% CPU). A retry gave `BUILD_EXIT=0` with a valid
+  `.next/BUILD_ID` and `/`, `/explore`, `/dashboard` all serving 200. An earlier
+  `EXIT=0` was discarded because `.next` held no build — confirm the artifact, not
+  the exit code. `tsc --noEmit` is clean for both `agent/` and `web/`; the build
+  itself still skips type and lint validation.
+- **Agent cannot boot locally.** `better-sqlite3` raises `ERR_DLOPEN_FAILED` — the
+  native binding targets Node ABI 127 (v22) while Node on `PATH` is v24 (ABI 137).
+  Endpoints were tested through Fastify `inject`, not over live HTTP. The web proxy
+  itself is confirmed working: an allowed path returns 502 (upstream down) and a
+  blocked path returns 404.
+- **First audit on a new PR is still slow or can fail.** Caching removes the cost of
+  *repeat* calls only. A first call on an unseen PR measured 10.9s on success and
+  23.4s before a 503. Pre-audit the demo PRs before presenting.
+- **No bounty on chain currently has a matching signature.** Signatures bind
+  `bountyId + devWallet + commitHash + prUrl + contract + chainId`, so a signature
+  only exists for an exact scope. Until an audit is run for a bounty owned by a
+  wallet you control, the Developer Hub claim list stays empty by design.
+- **Touch targets and mobile overflow were fixed and re-measured**, not assumed.
+  Drawer is right-anchored; 0 sub-44px targets and 0 horizontal overflow across
+  1440/768/390px.
+- **`pnpm build` in `web/` skips type-checking and linting** (`Skipping validation of
+  types`, `Skipping linting`), so a green build would not by itself prove type
+  safety. Type safety is currently proven by a separate `tsc --noEmit`.
 
 ---
 
 ## 🔗 Related Notes
+- [[Projects/Projects/Bountra - Master Plan|Bountra - Master Plan]]
 - [[Projects]]
 - [[Projects/BNB Hackathon 2026 - Project Candidates|Kandidat Ide Hackathon 2026]]
 - [[_MOC/Index|Knowledge Map]]

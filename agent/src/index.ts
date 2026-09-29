@@ -1,4 +1,14 @@
+// A stale GITHUB_TOKEN exported by the parent shell used to win over .env, and
+// the agent spent its life answering 401 Bad credentials while .env held a
+// working token. Clearing just that key before loading restores .env's value.
+//
+// Do NOT switch to dotenv.config({ override: true }): that clobbers every other
+// variable in .env, including the AGENT_PRIVATE_KEY, ESCROW_CONTRACT_ADDRESS and
+// DATABASE_PATH that test/setup.ts pins. It made the signature tests fail with
+// 409 because the test signature no longer recovered to the pinned signer.
+delete process.env.GITHUB_TOKEN;
 import "dotenv/config";
+
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import { fileURLToPath } from "node:url";

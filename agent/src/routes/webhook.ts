@@ -9,7 +9,7 @@ import {
 } from "../db/index.js";
 import { checkTestTampering } from "../evaluator/security.js";
 import { evaluatePrWithGemini, mockEvaluatePr } from "../evaluator/gemini.js";
-import { signBountyClaim } from "../signer/index.js";
+import { requireAgentSigningKey, signBountyClaim } from "../signer/index.js";
 import { GithubAuditClient, parseGithubIssueOrPrUrl } from "../github/client.js";
 import type { Address, Hex } from "viem";
 
@@ -81,29 +81,106 @@ export async function webhookRoutes(app: FastifyInstance) {
       });
     }
 
-    // Run Full 5-Layer Audit Pipeline
     const contractAddress = (process.env.ESCROW_CONTRACT_ADDRESS ||
       "0x0000000000000000000000000000000000000001") as Address;
     const chainId = Number(process.env.CHAIN_ID || 97);
-    const privateKey = (process.env.AGENT_PRIVATE_KEY ||
-      "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80") as Hex;
+    const privateKey = requireAgentSigningKey();
+
+    // Fetch the real PR. Previously this route trusted the webhook payload alone
+    // and fed Gemini the string "+ // Automated webhook diff analysis" while
+    // hardcoding ciStatus to "passed" — so the audit scored nothing real and the
+    // Hard Gate never ran. docs/RULES.md §2 requires CI status to come from the
+    // GitHub API, never from the caller.
+    const parsed = parseGithubIssueOrPrUrl(prUrl);
+    if (!parsed) {
+      await markWebhookProcessed(payloadHash);
+      return reply.code(400).send({ status: "error", message: "PR URL is not parseable" });
+    }
+
+    let prFromApi;
+    let issue;
+    const issueRef = bounty.issueUrl ? parseGithubIssueOrPrUrl(bounty.issueUrl) : null;
+    try {
+      [prFromApi, issue] = await Promise.all([
+        githubClient.fetchPullRequest(parsed.owner, parsed.repo, parsed.issueOrPrNumber),
+        issueRef
+          ? githubClient.fetchIssue(issueRef.owner, issueRef.repo, issueRef.issueOrPrNumber)
+          : Promise.resolve(null)
+      ]);
+    } catch (err) {
+      app.log.error({ prUrl, err: (err as Error).message }, "failed to fetch PR from GitHub");
+      await markWebhookProcessed(payloadHash);
+      return reply.code(502).send({ status: "error", message: "GitHub API unavailable" });
+    }
+
+    // The head SHA is what the contract binds, so the signature must be made from
+    // the SHA the API reports — not from whatever the payload claimed.
+    if (prFromApi.headCommitHash !== headSha) {
+      app.log.warn(
+        { payloadSha: headSha, apiSha: prFromApi.headCommitHash },
+        "head SHA mismatch between payload and GitHub API; using API value"
+      );
+    }
+
+    // Hard Gate: CI must actually be green. Reject before spending any LLM quota.
+    if (!prFromApi.ciPassed) {
+      await createAuditLog({
+        bountyId: bounty.bountyId,
+        prUrl,
+        commitHash: prFromApi.headCommitHash,
+        developer: devWallet,
+        ciStatus: "failed",
+        ciDetail: JSON.stringify(prFromApi.ciDetails),
+        integrityOk: 1,
+        aiScore: 0,
+        aiVerdict: "failed",
+        aiComment: "Hard Gate failed: CI checks are not green",
+        status: "failed"
+      });
+      await markWebhookProcessed(payloadHash);
+      return reply.code(200).send({
+        status: "rejected_ci",
+        message: "Hard Gate failed: CI checks are not green",
+        ciDetails: prFromApi.ciDetails
+      });
+    }
+
+    // Layer 2: test/CI tampering. Runs before the LLM, same as the manual route.
+    const tamperingCheck = checkTestTampering(prFromApi.changedFiles);
+    if (!tamperingCheck.ok) {
+      await createAuditLog({
+        bountyId: bounty.bountyId,
+        prUrl,
+        commitHash: prFromApi.headCommitHash,
+        developer: devWallet,
+        ciStatus: "passed",
+        ciDetail: JSON.stringify(prFromApi.ciDetails),
+        integrityOk: 0,
+        aiScore: 0,
+        aiVerdict: "failed",
+        aiComment: `Security Gate Failed: ${tamperingCheck.reason}`,
+        status: "failed"
+      });
+      await markWebhookProcessed(payloadHash);
+      return reply.code(200).send({
+        status: "rejected_tampering",
+        message: tamperingCheck.reason,
+        violations: tamperingCheck.violations
+      });
+    }
+
+    const prompt = {
+      issueTitle: issue?.title || `Bounty #${bounty.bountyId}`,
+      issueBody: issue?.body || bounty.issueUrl,
+      prTitle: prFromApi.prTitle || prTitle,
+      prBody: prFromApi.prBody || prBody,
+      diff: prFromApi.diff
+    };
 
     // AI Evaluation
     const aiResult = process.env.GEMINI_API_KEY
-      ? await evaluatePrWithGemini({
-          issueTitle: `Bounty #${bounty.bountyId}`,
-          issueBody: bounty.issueUrl,
-          prTitle,
-          prBody,
-          diff: "+ // Automated webhook diff analysis"
-        })
-      : mockEvaluatePr({
-          issueTitle: `Bounty #${bounty.bountyId}`,
-          issueBody: bounty.issueUrl,
-          prTitle,
-          prBody,
-          diff: "+ // Automated webhook diff analysis"
-        });
+      ? await evaluatePrWithGemini(prompt)
+      : mockEvaluatePr(prompt);
 
     let signature: Hex | null = null;
     if (aiResult.verdict === "passed" && !aiResult.tamperingDetected) {
@@ -111,7 +188,7 @@ export async function webhookRoutes(app: FastifyInstance) {
         {
           bountyId: bounty.bountyId,
           devWallet,
-          commitHash: headSha,
+          commitHash: prFromApi.headCommitHash,
           prUrl,
           contractAddress,
           chainId
@@ -125,10 +202,10 @@ export async function webhookRoutes(app: FastifyInstance) {
     await createAuditLog({
       bountyId: bounty.bountyId,
       prUrl,
-      commitHash: headSha,
+      commitHash: prFromApi.headCommitHash,
       developer: devWallet,
       ciStatus: "passed",
-      ciDetail: JSON.stringify({ webhook: true }),
+      ciDetail: JSON.stringify(prFromApi.ciDetails),
       integrityOk: 1,
       aiScore: aiResult.score,
       aiVerdict: aiResult.verdict,

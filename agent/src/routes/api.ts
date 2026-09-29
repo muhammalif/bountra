@@ -6,9 +6,11 @@ import {
   getAuditLogByBountyId,
   createAuditLog,
   updateBountyStatus,
-  findReusableAudit
+  findReusableAudit,
+  listPassedAuditsByDeveloper
 } from "../db/index.js";
 import {
+  requireAgentSigningKey,
   signBountyClaim,
   computeRawClaimHash,
   computeClaimDigest
@@ -72,7 +74,7 @@ export async function apiRoutes(app: FastifyInstance) {
       reply: FastifyReply
     ) => {
       const body = request.body;
-      if (!body.bountyId || !body.issueUrl || !body.creator || !body.token || !body.amount) {
+      if (body.bountyId === undefined || !body.issueUrl || !body.creator || !body.token || !body.amount) {
         return reply.code(400).send({ error: "Missing required fields" });
       }
 
@@ -134,7 +136,7 @@ export async function apiRoutes(app: FastifyInstance) {
         chainId = Number(process.env.CHAIN_ID || 97)
       } = request.body;
 
-      if (!bountyId || !prUrl || !commitHash || !devWallet) {
+      if (bountyId === undefined || !prUrl || !commitHash || !devWallet) {
         return reply.code(400).send({ error: "Missing required audit parameters" });
       }
 
@@ -235,8 +237,7 @@ export async function apiRoutes(app: FastifyInstance) {
       let digest: Hex | null = null;
 
       if (aiResult.verdict === "passed" && !aiResult.tamperingDetected) {
-        const privateKey = (process.env.AGENT_PRIVATE_KEY ||
-          "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80") as Hex;
+        const privateKey = requireAgentSigningKey();
 
         const signResult = await signBountyClaim(
           {
@@ -278,6 +279,104 @@ export async function apiRoutes(app: FastifyInstance) {
         rawHash,
         digest,
         auditLog: audit
+      });
+    }
+  );
+
+  // ─── Claimable list for the Developer Hub ───
+  // Read-only: reports which bounties this developer has a passing audit for.
+  // It grants nothing — the signature is still required at claim time — it just
+  // tells the UI which rows can be claimed instead of guessing from mock status.
+  app.get("/api/claim/eligible", async (request: FastifyRequest<{ Querystring: { developer: string } }>, reply: FastifyReply) => {
+    const developer = request.query.developer;
+    if (!developer) {
+      return reply.code(400).send({ error: "developer query parameter is required" });
+    }
+
+    const audits = await listPassedAuditsByDeveloper(developer);
+    return reply.code(200).send({
+      data: audits.map((a) => ({
+        bountyId: a.bountyId,
+        prUrl: a.prUrl,
+        commitHash: a.commitHash,
+        verdict: a.aiVerdict,
+        score: a.aiScore,
+        summary: a.aiComment,
+        hasSignature: Boolean(a.signature),
+        auditLogId: a.id
+      }))
+    });
+  });
+
+  // ─── Claim authorization ───
+  // Returns the agent signature for a claim, but ONLY from an audit that
+  // actually passed for this exact claim scope. Signature issuance is a read of
+  // the audit trail, never a way to mint one: there is deliberately no
+  // "skip the audit" parameter, because that would make the signature a
+  // rubber stamp rather than proof of an evaluated PR.
+  //
+  // Deterministic by design — no evaluator call. The semantic verdict already
+  // lives in audit_logs (A2 cache); recomputing it here would burn provider
+  // quota and could flip a passing verdict on a 503, which would revoke an
+  // authorization the developer is already holding.
+  app.post(
+    "/api/claim/authorize",
+    async (
+      request: FastifyRequest<{
+        Body: {
+          bountyId: number;
+          prUrl: string;
+          commitHash: string;
+          devWallet: string;
+          contractAddress?: string;
+          chainId?: number;
+        };
+      }>,
+      reply: FastifyReply
+    ) => {
+      const {
+        bountyId,
+        prUrl,
+        commitHash,
+        devWallet,
+        contractAddress = (process.env.ESCROW_CONTRACT_ADDRESS || "0x0000000000000000000000000000000000000001") as Address,
+        chainId = Number(process.env.CHAIN_ID || 97)
+      } = request.body;
+
+      if (bountyId === undefined || !prUrl || !commitHash || !devWallet) {
+        return reply.code(400).send({ error: "Missing required claim parameters" });
+      }
+
+      const audit = await findReusableAudit({ bountyId, prUrl, commitHash, developer: devWallet });
+
+      if (!audit || !audit.signature) {
+        return reply.code(409).send({
+          authorized: false,
+          error: "No passing audit exists for this bounty, PR, commit and developer. Run the audit before claiming."
+        });
+      }
+
+      // Recompute rather than trust the stored digest: it is a pure function of
+      // the same parameters the signature was produced from, and recomputing
+      // means the digest handed to the client can never disagree with the bytes
+      // the contract will verify.
+      const claimParams = {
+        bountyId,
+        devWallet: devWallet as Address,
+        commitHash,
+        prUrl,
+        contractAddress: contractAddress as Address,
+        chainId
+      };
+
+      return reply.code(200).send({
+        authorized: true,
+        signature: audit.signature as Hex,
+        rawHash: computeRawClaimHash(claimParams),
+        digest: computeClaimDigest(claimParams),
+        verdict: audit.aiVerdict,
+        score: audit.aiScore,
+        auditLogId: audit.id
       });
     }
   );

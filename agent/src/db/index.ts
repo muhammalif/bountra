@@ -200,6 +200,29 @@ export async function findReusableAudit(
     .get();
 }
 
+/**
+ * Every passing audit for one developer, newest first.
+ *
+ * Drives the Developer Hub claim list: a bounty is only offered as claimable
+ * when a passing audit exists for THIS developer, which is also the only case
+ * where a usable agent signature exists. Reuses audit_logs (A2) rather than a
+ * second table — the audit trail is the single source of truth for "was this
+ * PR actually evaluated and did it pass".
+ */
+export async function listPassedAuditsByDeveloper(developer: string, dbInstance = db) {
+  return dbInstance
+    .select()
+    .from(schema.auditLogs)
+    .where(
+      and(
+        eq(schema.auditLogs.developer, developer.toLowerCase()),
+        eq(schema.auditLogs.status, "passed")
+      )
+    )
+    .orderBy(desc(schema.auditLogs.id))
+    .all();
+}
+
 export async function recordWebhookEvent(data: NewWebhookEvent, dbInstance = db) {
   return dbInstance.insert(schema.webhookEvents).values(data).returning().get();
 }
