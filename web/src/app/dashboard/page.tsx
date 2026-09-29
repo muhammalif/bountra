@@ -47,12 +47,17 @@ export default function DashboardPage() {
     return mock;
   }, [address, onChainBounties]);
 
-  // Developer Hub claims for demo: show bounties that are claimed and ready_to_claim
+  // Developer Hub claims. Mock rows carry synthetic ids that do not exist on
+  // chain, and claimBounty reverts with BountyNotFound() for them, so a mock
+  // row is only offered when a real bounty backs the same id.
   const devClaims = useMemo(() => {
-    return INITIAL_BOUNTIES.filter(
+    const claimed = INITIAL_BOUNTIES.filter(
       (b) => b.status === "claimed" || b.status === "ready_to_claim"
     );
-  }, []);
+    return claimed
+      .map((b) => onChainBounties.find((c) => c.id === b.id))
+      .filter((c): c is NonNullable<typeof c> => Boolean(c));
+  }, [onChainBounties]);
 
   const isUserLoggedIn = Boolean((ready && authenticated) || (isConnected && Boolean(address)));
 

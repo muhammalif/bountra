@@ -13,7 +13,7 @@ export const BOUNTRA_ESCROW_ABI = parseAbi([
   "event BountyClaimed(uint256 indexed bountyId, address indexed developer, string prUrl, string commitHash)",
   "event BountyCancelled(uint256 indexed bountyId, address indexed creator)",
   "function createBounty(string calldata issueUrl, address token, uint256 amount, uint256 deadline) external returns (uint256 bountyId)",
-  "function claimBounty(uint256 bountyId, address devWallet, string calldata prUrl, string calldata commitHash, bytes calldata signature) external",
+  "function claimBounty(uint256 bountyId, address devWallet, string calldata commitHash, string calldata prUrl, bytes calldata signature) external",
   "function cancelBounty(uint256 bountyId) external",
   "function getBounty(uint256 bountyId) external view returns ((address creator, bool claimed, bool cancelled, address token, uint256 amount, uint256 deadline, string issueUrl))",
   "function bountyCount() external view returns (uint256)",

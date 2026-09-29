@@ -120,8 +120,8 @@ export function ClaimBountyDrawer({
         args: [
           BigInt(bounty.id),
           address,
-          prUrl.trim(),
           commitHash.trim(),
+          prUrl.trim(),
           signature.trim() as `0x${string}`
         ]
       });
