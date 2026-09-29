@@ -1,14 +1,12 @@
-# Bountra ⚡
+# Bountra
 
-> **Autonomous GitHub PR Auditor & Code-Gated Milestone Escrow on BNB Chain**  
-> *Built for BNB Chain Hackathon 2026 • AI Agents Track*
+> **Autonomous GitHub PR Auditor & Code-Gated Milestone Escrow on BNB Chain** 
 
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.28-363636?logo=solidity)](https://soliditylang.org/)
-[![Foundry](https://img.shields.io/badge/Foundry-Tests%2015%2F15%20Passing-black?logo=ethereum)](https://book.getfoundry.sh/)
-[![Fastify](https://img.shields.io/badge/Agent-Tests%2031%2F31%20Passing-black?logo=fastify)](https://fastify.dev/)
+[![Foundry](https://img.shields.io/badge/Foundry-363636?logo=ethereum)](https://book.getfoundry.sh/)
+[![Fastify](https://img.shields.io/badge/Fastify-363636?logo=fastify)](https://fastify.dev/)
 [![Next.js](https://img.shields.io/badge/Next.js-14.2%20App%20Router-black?logo=next.js)](https://nextjs.org/)
 [![BNB Chain](https://img.shields.io/badge/BNB%20Chain-BSC%20Testnet%2097-F0B90B?logo=binance)](https://testnet.bscscan.com/address/0xbe576879961Bd8cdf7CfA72F146C8a3E352c7260)
-[![Gemini Flash](https://img.shields.io/badge/AI%20Engine-Gemini%20Flash-4285F4?logo=google)](https://deepmind.google/technologies/gemini/)
 
 ---
 
@@ -40,13 +38,13 @@ Once verified, the developer triggers instant on-chain escrow release in under 1
 bountra/
 ├── contracts/               # Foundry Smart Contracts (Solidity 0.8.28, Cancun EVM)
 │   ├── src/BountraEscrow.sol
-│   ├── test/BountraEscrow.t.sol (15/15 tests passing)
+│   ├── test/BountraEscrow.t.sol
 │   └── script/DeployEscrow.s.sol
 ├── agent/                   # Agent Evaluation Backend (Fastify + Gemini Flash)
 │   ├── src/evaluator/       # Gemini Flash code review, XML-sandboxed
 │   ├── src/signer/          # Viem ECDSA claim attestation
 │   ├── src/routes/webhook.ts
-│   └── test/                # 31/31 tests passing (CI gates, scope binding, mock eval)
+│   └── test/                # CI gates, scope binding, mock evaluator
 ├── web/                     # Frontend Multi-Page dApp (Next.js 14 + Privy + Wagmi)
 │   ├── src/app/page.tsx           # Landing Page + Hero Visualizer + Live Terminal
 │   ├── src/app/explore/page.tsx   # Bounty Directory + Filters + CreateBountyModal
@@ -57,57 +55,17 @@ bountra/
 
 ---
 
-## ⚙️ Environment Variables
-
-No `.env.example` files ship with the repo. Create these yourself after cloning.
-
-### `contracts/.env` (Foundry)
-```bash
-PRIVATE_KEY=<deployer private key, wallet with tBNB testnet balance>
-AGENT_SIGNER=0x2e10F4a41F665c657Ff4deC4A780e8734A066848   # public address only
-BSC_TESTNET_RPC_URL=https://bsc-testnet-rpc.publicnode.com
-BSC_TESTNET_RPC_FALLBACK=https://data-seed-prebsc-1-s1.bnbchain.org:8545
-OPBNB_TESTNET_RPC_URL=https://opbnb-testnet-rpc.bnbchain.org
-BSCSCAN_API_KEY=<optional, for verification>
-OPBNBSCAN_API_KEY=<optional, for verification>
-```
-
-### `agent/.env` (Fastify)
-```bash
-AGENT_PRIVATE_KEY=<agent signer private key — the only key allowed to sign claims>
-ESCROW_CONTRACT_ADDRESS=0xbe576879961Bd8cdf7CfA72F146C8a3E352c7260
-CHAIN_ID=97
-GEMINI_API_KEY=<your key>
-GITHUB_TOKEN=<PAT with repo scope, receives webhooks>
-DATABASE_PATH=./data/bountra.db
-PORT=3001
-HOST=0.0.0.0
-```
-
-> `AGENT_PRIVATE_KEY` has **no fallback**. The agent refuses to start without it.
-> An earlier version silently fell back to Anvil account #0 — a key printed in
-> every Foundry tutorial — which would have produced signatures that verify
-> against a publicly known address.
-
-### `web/.env.local` (Next.js)
-```bash
-NEXT_PUBLIC_PRIVY_APP_ID=<from dashboard.privy.io>
-NEXT_PUBLIC_ESCROW_CONTRACT_ADDRESS=0xbe576879961Bd8cdf7CfA72F146C8a3E352c7260
-NEXT_PUBLIC_CHAIN_ID=97
-NEXT_PUBLIC_AGENT_API_URL=http://localhost:3001
-NEXT_PUBLIC_MOCK_USDT_ADDRESS=<optional>
-```
-
-The webhook endpoint needs a **public URL** during the demo. Use a tunnel to
-port 3001 and register the resulting URL as the GitHub App webhook target.
-
----
-
 ## ⚡ Quickstart
+
+Each package reads its config from a local env file. Copy the matching
+`.env.example` in that package's root, fill in the values, and keep the file
+untracked — the agent refuses to sign claims without an explicit
+`AGENT_PRIVATE_KEY`, so there is no default to fall back on.
 
 ### 1. Smart Contracts (Foundry)
 ```bash
 cd contracts
+cp .env.example .env      # needs PRIVATE_KEY and AGENT_SIGNER
 forge build
 forge test -vvv
 ```
@@ -115,6 +73,7 @@ forge test -vvv
 ### 2. Agent Evaluation Service (Fastify)
 ```bash
 cd agent
+cp .env.example .env      # needs AGENT_PRIVATE_KEY, GEMINI_API_KEY, GITHUB_TOKEN
 pnpm install
 pnpm test
 pnpm dev
@@ -123,9 +82,13 @@ pnpm dev
 ### 3. Frontend Multi-Page dApp (Next.js 14)
 ```bash
 cd web
+cp .env.example .env.local   # needs NEXT_PUBLIC_PRIVY_APP_ID
 pnpm install
 pnpm dev # runs on http://localhost:3000
 ```
+
+The GitHub webhook target must be a **public URL** during the demo. Tunnel
+port 3001 and register the resulting URL as the GitHub App webhook.
 
 ---
 
