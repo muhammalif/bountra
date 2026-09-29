@@ -160,6 +160,24 @@ export async function updateAuditLog(id: number, data: Partial<NewAuditLog>, dbI
 }
 
 /**
+ * The newest audit row for a bounty, whatever its status.
+ *
+ * findReusableAudit cannot serve claim settlement: it demands the full
+ * (bounty, pr, commit, developer) tuple and only matches status "passed", while
+ * the browser reports a claim with just a bountyId and a tx hash. Looking the
+ * row up by bounty alone is also what makes the endpoint idempotent — a second
+ * confirm finds the already-claimed row and returns without touching chain.
+ */
+export async function getLatestAuditForBounty(bountyId: number, dbInstance = db) {
+  return dbInstance
+    .select()
+    .from(schema.auditLogs)
+    .where(eq(schema.auditLogs.bountyId, bountyId))
+    .orderBy(desc(schema.auditLogs.id))
+    .get();
+}
+
+/**
  * Reusable audit verdict for an already-audited claim.
  *
  * This is the A2 cache. It deliberately reuses `audit_logs` rather than adding a

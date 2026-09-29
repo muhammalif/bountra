@@ -95,10 +95,24 @@ export function ClaimBountyDrawer({
   });
 
   useEffect(() => {
-    if (isClaimSuccess && onSuccess) {
-      onSuccess();
+    if (isClaimSuccess && claimTxHash && bounty) {
+      // Report settlement to the agent. The agent verifies the tx on-chain
+      // before marking the audit as claimed, so a replay or a spoofed hash
+      // is rejected — this fetch is fire-and-forget in the UI because a
+      // failure to record settlement does not undo the on-chain payout.
+      fetch("/api/agent/claim/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bountyId: bounty.id,
+          txHash: claimTxHash,
+          devWallet: address
+        })
+      }).catch(() => {});
+
+      if (onSuccess) onSuccess();
     }
-  }, [isClaimSuccess, onSuccess]);
+  }, [isClaimSuccess, claimTxHash, bounty, address, onSuccess]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

@@ -6,6 +6,8 @@ import {
   getAuditLogByBountyId,
   createAuditLog,
   updateBountyStatus,
+  updateAuditLog,
+  getLatestAuditForBounty,
   findReusableAudit,
   listPassedAuditsByDeveloper
 } from "../db/index.js";
@@ -17,6 +19,7 @@ import {
 } from "../signer/index.js";
 import { evaluatePrWithGemini, mockEvaluatePr, EvaluatorUnavailableError } from "../evaluator/gemini.js";
 import { checkTestTampering } from "../evaluator/security.js";
+import { verifyClaimOnChain } from "../chain/verifyClaim.js";
 import type { Address, Hex } from "viem";
 
 export async function apiRoutes(app: FastifyInstance) {
@@ -377,6 +380,84 @@ export async function apiRoutes(app: FastifyInstance) {
         verdict: audit.aiVerdict,
         score: audit.aiScore,
         auditLogId: audit.id
+      });
+    }
+  );
+
+  // ─── Claim settlement ───
+  // Called by the browser once claimBounty() has a receipt. The agent does not
+  // take the client's word for it: the tx is read back from BSC testnet and must
+  // have emitted BountyClaimed for this bountyId and this developer. Only then
+  // is the audit marked claimed, because that status is what keeps an already
+  // paid bounty from being listed as claimable again.
+  app.post(
+    "/api/claim/confirm",
+    async (
+      request: FastifyRequest<{
+        Body: { bountyId: number; txHash: string; devWallet?: string };
+      }>,
+      reply: FastifyReply
+    ) => {
+      const { bountyId, txHash, devWallet } = request.body;
+
+      if (bountyId === undefined || !txHash || !/^0x[a-fA-F0-9]{64}$/.test(txHash)) {
+        return reply.code(400).send({ error: "bountyId and a 32-byte txHash are required" });
+      }
+
+      const rpcUrl = process.env.BSC_TESTNET_RPC_URL;
+      if (!rpcUrl) {
+        return reply.code(500).send({ error: "BSC_TESTNET_RPC_URL is not configured on the agent" });
+      }
+
+      const escrowAddress = (process.env.ESCROW_CONTRACT_ADDRESS || "0x") as Address;
+
+      const audit = await getLatestAuditForBounty(bountyId);
+      if (!audit) {
+        return reply.code(404).send({ error: `No audit exists for bounty ${bountyId}` });
+      }
+
+      if (audit.status === "claimed" && audit.claimTxHash) {
+        return reply.code(200).send({
+          confirmed: true,
+          alreadyConfirmed: true,
+          txHash: audit.claimTxHash
+        });
+      }
+
+      const verification = await verifyClaimOnChain({
+        txHash: txHash as Hex,
+        bountyId,
+        // Default to the audited developer rather than trusting the caller: the
+        // audit row already names who was paid, so an omitted or wrong devWallet
+        // cannot let someone else's claim settle this bounty.
+        expectedDeveloper: (devWallet as Address | undefined) ?? (audit.developer as Address),
+        escrowAddress,
+        rpcUrl
+      });
+
+      if (!verification.ok) {
+        return reply.code(409).send({ confirmed: false, error: verification.reason });
+      }
+
+      // The event carries the scope the contract actually paid out. Prefer those
+      // over the client-supplied pair so the stored audit row cannot disagree
+      // with the signature the contract verified.
+      const updated = await updateAuditLog(audit.id, {
+        status: "claimed",
+        claimTxHash: txHash,
+        prUrl: verification.prUrl,
+        commitHash: verification.commitHash
+      });
+
+      await updateBountyStatus(bountyId, "claimed");
+
+      return reply.code(200).send({
+        confirmed: true,
+        alreadyConfirmed: false,
+        txHash,
+        blockNumber: verification.blockNumber.toString(),
+        developer: verification.developer,
+        auditLogId: updated?.id ?? audit.id
       });
     }
   );

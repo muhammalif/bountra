@@ -12,7 +12,7 @@ import { NextRequest, NextResponse } from "next/server";
  * forwarded on purpose — running an audit is a server-side decision made by the
  * webhook, not something a client button can trigger.
  */
-const ALLOWED = new Set(["claim/eligible", "claim/authorize", "bounties"]);
+const ALLOWED = new Set(["claim/eligible", "claim/authorize", "claim/confirm", "bounties"]);
 
 function agentBase(): string {
   const url = process.env.NEXT_PUBLIC_AGENT_API_URL || process.env.AGENT_API_URL;
