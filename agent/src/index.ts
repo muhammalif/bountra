@@ -15,15 +15,43 @@ import { fileURLToPath } from "node:url";
 import { apiRoutes } from "./routes/api.js";
 import { webhookRoutes } from "./routes/webhook.js";
 
+/**
+ * Origins allowed to call the agent from a browser.
+ *
+ * The agent holds AGENT_PRIVATE_KEY and will sign a release authorization for
+ * any bounty that passes an audit, so `origin: true` (reflect whatever the
+ * caller sends) would let any page on the internet ask it to sign. Only the
+ * deployed web frontends and local development get through.
+ *
+ * The webhook is exempt: GitHub's servers post without an Origin header, and
+ * they are authenticated separately by payload signature.
+ *
+ * ALLOWED_ORIGINS is a comma-separated list. Leaving it unset falls back to
+ * localhost only rather than to a wildcard, so a misconfigured deploy fails
+ * closed instead of opening the signer to the internet.
+ */
+function allowedOrigins(): string[] | true {
+  const configured = (process.env.ALLOWED_ORIGINS || "")
+    .split(",")
+    .map((o) => o.trim().replace(/\/$/, ""))
+    .filter(Boolean);
+
+  const defaults = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000"
+  ];
+
+  const list = [...new Set([...defaults, ...configured])];
+  return list;
+}
+
 export function buildServer(opts = {}) {
   const app = Fastify({
     logger: false,
     ...opts
   });
 
-  app.register(cors, {
-    origin: true
-  });
+  app.register(cors, { origin: allowedOrigins() });
 
   app.register(apiRoutes);
   app.register(webhookRoutes);
