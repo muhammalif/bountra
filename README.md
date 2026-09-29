@@ -92,13 +92,5 @@ port 3001 and register the resulting URL as the GitHub App webhook.
 
 ---
 
-## 📹 Hackathon Demo & Presentation
-
-The demo script, pitch deck and development plan are maintained outside the
-public repo. What a judge needs is in this README: the 5-layer audit pipeline,
-the deployed contract address, the test counts, and the Quickstart above.
-
----
-
 ## 📄 License
 MIT License. Built with ❤️ for the BNB Chain Ecosystem.
