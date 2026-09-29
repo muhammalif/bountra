@@ -25,6 +25,11 @@ process.env.AGENT_PRIVATE_KEY =
 process.env.ESCROW_CONTRACT_ADDRESS = "0x0000000000000000000000000000000000000001";
 process.env.CHAIN_ID = "97";
 
+// The webhook route fails closed when this is unset (503). Tests that exercise
+// the webhook must therefore pin a throwaway secret and sign their payloads —
+// which is the point: no delivery reaches the audit path unsigned.
+process.env.GITHUB_WEBHOOK_SECRET = "test-webhook-secret-not-for-production";
+
 // src/db/index.ts defaults to ./data/bountra.db. Without this, every `pnpm test`
 // run opened the developer's real database and left rows behind, so the dev
 // database accumulated ~100 fake audits and /api/claim/eligible answered with

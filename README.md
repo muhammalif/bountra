@@ -43,6 +43,7 @@ bountra/
 ├── agent/                   # Agent Evaluation Backend (Fastify + Gemini Flash)
 │   ├── src/evaluator/       # Gemini Flash code review, XML-sandboxed
 │   ├── src/signer/          # Viem ECDSA claim attestation
+│   ├── src/security/        # HMAC-SHA256 webhook signature verification
 │   ├── src/routes/webhook.ts
 │   └── test/                # CI gates, scope binding, mock evaluator
 ├── web/                     # Frontend Multi-Page dApp (Next.js 14 + Privy + Wagmi)
@@ -87,8 +88,44 @@ pnpm install
 pnpm dev # runs on http://localhost:3000
 ```
 
-The GitHub webhook target must be a **public URL** during the demo. Tunnel
-port 3001 and register the resulting URL as the GitHub App webhook.
+### 4. GitHub Webhook (optional — the manual path works without it)
+
+```bash
+# 1. pick a secret, put it in agent/.env
+echo "GITHUB_WEBHOOK_SECRET=$(openssl rand -hex 32)" >> agent/.env
+
+# 2. expose the agent
+cd agent && pnpm dev
+cloudflared tunnel --url http://localhost:3001
+
+# 3. register the hook (needs a token with admin:repo_hook — the agent's own
+#    GITHUB_TOKEN only reads PRs and check-runs)
+curl -X POST https://api.github.com/repos/<owner>/<repo>/hooks \
+  -H "Authorization: Bearer $GITHUB_ADMIN_TOKEN" \
+  -H "Accept: application/vnd.github+json" \
+  -d '{"name":"web","active":true,"events":["pull_request"],
+       "config":{"url":"https://<tunnel-host>/webhook/github",
+                 "content_type":"json","secret":"<same secret>"}}'
+```
+
+Every delivery is authenticated with `HMAC-SHA256(secret, raw body)` and checked
+against `x-hub-signature-256` in constant time. If `GITHUB_WEBHOOK_SECRET` is
+unset the endpoint answers `503` and audits nothing — by design, not as a bug to
+work around.
+
+| Response | Meaning |
+|---|---|
+| `503` | Secret not configured on the agent |
+| `401` | Missing, malformed or wrong signature |
+| `200` `skipped` | PR closes an issue with no registered bounty |
+| `200` `pending_wallet` | PR body has no `Wallet: 0x...` line |
+| `200` `audited` | Evaluator ran — `verdict`, `score`, `signature` returned |
+
+The PR body must reference the bounty issue (`Closes <issue-url>`) and the
+payout address (`Wallet: 0x...`), otherwise nothing is signed.
+
+For a demo, skip all of this: `POST /api/audit/evaluate` runs the same CI and
+integrity gates and needs no hook.
 
 ---
 

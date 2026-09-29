@@ -53,6 +53,28 @@ export function buildServer(opts = {}) {
 
   app.register(cors, { origin: allowedOrigins() });
 
+  // The webhook HMAC is computed over the bytes GitHub sent, not over the
+  // parsed object: JSON re-serialization reorders keys and drops whitespace, so
+  // a digest built from the parsed body almost never matches. Fastify's default
+  // JSON parser discards those bytes, so keep them on the request as
+  // `rawBody` and let the webhook route verify against that.
+  app.addContentTypeParser(
+    "application/json",
+    { parseAs: "buffer" },
+    function jsonWithRawBody(req, payload, done) {
+      const raw = payload as Buffer;
+      try {
+        const parsed = raw.length ? JSON.parse(raw.toString("utf8")) : {};
+        (req as { rawBody?: Buffer }).rawBody = raw;
+        done(null, parsed);
+      } catch (err) {
+        const e = err as Error & { statusCode?: number };
+        e.statusCode = 400;
+        done(e, undefined);
+      }
+    }
+  );
+
   app.register(apiRoutes);
   app.register(webhookRoutes);
 

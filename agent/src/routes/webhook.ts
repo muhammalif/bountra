@@ -8,6 +8,7 @@ import {
   createAuditLog
 } from "../db/index.js";
 import { checkTestTampering } from "../evaluator/security.js";
+import { verifyGithubSignature } from "../security/webhookSignature.js";
 import { evaluatePrWithGemini, mockEvaluatePr } from "../evaluator/gemini.js";
 import { requireAgentSigningKey, signBountyClaim } from "../signer/index.js";
 import { GithubAuditClient, parseGithubIssueOrPrUrl } from "../github/client.js";
@@ -19,6 +20,32 @@ export async function webhookRoutes(app: FastifyInstance) {
   app.post("/webhook/github", async (request: FastifyRequest, reply: FastifyReply) => {
     const event = request.headers["x-github-event"] as string;
     const body = request.body as Record<string, unknown>;
+
+    // Authenticate the delivery BEFORE anything else: before the dedup lookup,
+    // before the DB write, before the GitHub API call, before any LLM spend.
+    // An unsigned request to this endpoint is what turns the agent's signing key
+    // into an open service. docs/RULES.md §1 mandates this HMAC check and the
+    // previous implementation had no verification at all.
+    const secret = process.env.GITHUB_WEBHOOK_SECRET;
+    const deliverySignature = request.headers["x-hub-signature-256"] as string | undefined;
+    const rawBody = (request as { rawBody?: Buffer }).rawBody;
+
+    // Nothing configured means nobody can authenticate, so refuse rather than
+    // accept: a testnet deployment that forgot the secret must not silently
+    // become an unsigned endpoint.
+    if (!secret) {
+      app.log.error("GITHUB_WEBHOOK_SECRET is not set; refusing webhook delivery");
+      return reply.code(503).send({
+        status: "error",
+        message: "Webhook is not configured (GITHUB_WEBHOOK_SECRET missing)"
+      });
+    }
+
+    const verified = verifyGithubSignature({ signature: deliverySignature, rawBody, secret });
+    if (!verified.ok) {
+      app.log.warn({ reason: verified.reason }, "rejected webhook delivery with invalid signature");
+      return reply.code(401).send({ status: "error", message: `Invalid signature: ${verified.reason}` });
+    }
 
     // Deduplication via SHA-256 payload hash
     const payloadString = JSON.stringify(body);

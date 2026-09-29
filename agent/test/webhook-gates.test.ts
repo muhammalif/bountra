@@ -6,30 +6,76 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { buildServer } from "../src/index.js";
+import { signGithubPayload } from "../src/security/webhookSignature.js";
 
+const SECRET = process.env.GITHUB_WEBHOOK_SECRET as string;
 const app = buildServer();
 
+// fastify.inject serializes `payload` to JSON itself, so the bytes the server
+// receives are the stringification of exactly this object — signing that same
+// string is what GitHub does. Signing a pretty-printed variant would not match,
+// which is the whole reason the route hashes the raw buffer instead of the
+// parsed body.
 function prEvent(payload: Record<string, unknown>, event = "pull_request") {
+  const body = {
+    action: "opened",
+    pull_request: {
+      html_url: "https://github.com/bountra/demo/pull/1",
+      body: "Wallet: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      title: "fix: something",
+      number: 1,
+      head: { sha: "0".repeat(40) }
+    },
+    sender: { login: "octocat" },
+    ...payload
+  };
   return {
     method: "POST" as const,
     url: "/webhook/github",
-    headers: { "x-github-event": event },
-    payload: {
-      action: "opened",
-      pull_request: {
-        html_url: "https://github.com/bountra/demo/pull/1",
-        body: "Wallet: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
-        title: "fix: something",
-        number: 1,
-        head: { sha: "0".repeat(40) }
-      },
-      sender: { login: "octocat" },
-      ...payload
-    }
+    headers: {
+      "x-github-event": event,
+      "x-hub-signature-256": signGithubPayload(JSON.stringify(body), SECRET)
+    },
+    payload: body
   };
 }
 
+// An unsigned delivery, for the negative cases below.
+function unsignedPrEvent(payload: Record<string, unknown>, event = "pull_request") {
+  const { payload: body, ...req } = prEvent(payload, event);
+  return { ...req, headers: { "x-github-event": event }, payload: body };
+}
+
 describe("Webhook pre-flight gates", () => {
+  it("rejects an unsigned delivery before touching the audit path", async () => {
+    const res = await app.inject(unsignedPrEvent({}));
+    assert.equal(res.statusCode, 401);
+    assert.match(JSON.parse(res.body).message, /missing_signature/);
+  });
+
+  it("rejects a delivery signed with the wrong secret", async () => {
+    const req = prEvent({});
+    const res = await app.inject({
+      ...req,
+      headers: {
+        ...req.headers,
+        "x-hub-signature-256": signGithubPayload(JSON.stringify(req.payload), "not-the-secret")
+      }
+    });
+    assert.equal(res.statusCode, 401);
+    assert.match(JSON.parse(res.body).message, /bad_signature/);
+  });
+
+  it("rejects a signature that is not the sha256= form", async () => {
+    const req = prEvent({});
+    const res = await app.inject({
+      ...req,
+      headers: { ...req.headers, "x-hub-signature-256": SECRET }
+    });
+    assert.equal(res.statusCode, 401);
+    assert.match(JSON.parse(res.body).message, /malformed_signature/);
+  });
+
   it("ignores events it does not handle", async () => {
     const res = await app.inject(prEvent({}, "issues"));
     assert.equal(res.statusCode, 200);
