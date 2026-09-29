@@ -5,7 +5,7 @@
 
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.28-363636?logo=solidity)](https://soliditylang.org/)
 [![Foundry](https://img.shields.io/badge/Foundry-Tests%2015%2F15%20Passing-black?logo=ethereum)](https://book.getfoundry.sh/)
-[![Fastify](https://img.shields.io/badge/Fastify-Tests%2016%2F16%20Passing-black?logo=fastify)](https://fastify.dev/)
+[![Fastify](https://img.shields.io/badge/Agent-Tests%2031%2F31%20Passing-black?logo=fastify)](https://fastify.dev/)
 [![Next.js](https://img.shields.io/badge/Next.js-14.2%20App%20Router-black?logo=next.js)](https://nextjs.org/)
 [![BNB Chain](https://img.shields.io/badge/BNB%20Chain-BSC%20Testnet%2097-F0B90B?logo=binance)](https://testnet.bscscan.com/address/0xbe576879961Bd8cdf7CfA72F146C8a3E352c7260)
 [![Gemini Flash](https://img.shields.io/badge/AI%20Engine-Gemini%20Flash-4285F4?logo=google)](https://deepmind.google/technologies/gemini/)
