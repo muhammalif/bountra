@@ -43,21 +43,63 @@ bountra/
 │   ├── test/BountraEscrow.t.sol (15/15 tests passing)
 │   └── script/DeployEscrow.s.sol
 ├── agent/                   # Agent Evaluation Backend (Fastify + Gemini Flash)
-│   ├── src/services/evaluator.ts
-│   ├── src/services/signer.ts
+│   ├── src/evaluator/       # Gemini Flash code review, XML-sandboxed
+│   ├── src/signer/          # Viem ECDSA claim attestation
 │   ├── src/routes/webhook.ts
-│   └── tests/               # 16/16 tests passing (mocking CI, diff, prompt sandbox)
+│   └── test/                # 31/31 tests passing (CI gates, scope binding, mock eval)
 ├── web/                     # Frontend Multi-Page dApp (Next.js 14 + Privy + Wagmi)
 │   ├── src/app/page.tsx           # Landing Page + Hero Visualizer + Live Terminal
 │   ├── src/app/explore/page.tsx   # Bounty Directory + Filters + CreateBountyModal
 │   ├── src/app/dashboard/page.tsx # Sponsor Escrow Manager (Refund) + Developer Claims
 │   ├── src/components/modals/     # CreateBountyModal + ClaimBountyDrawer
 │   └── src/components/terminal/   # 5-Layer Live Audit Terminal & Simulator
-└── docs/                    # Master Plan, Pitch, Demo Script, and Architecture
-    ├── DEMO_SCRIPT.md
-    ├── PITCH.md
-    └── plans/master-plan.md
 ```
+
+---
+
+## ⚙️ Environment Variables
+
+No `.env.example` files ship with the repo. Create these yourself after cloning.
+
+### `contracts/.env` (Foundry)
+```bash
+PRIVATE_KEY=<deployer private key, wallet with tBNB testnet balance>
+AGENT_SIGNER=0x2e10F4a41F665c657Ff4deC4A780e8734A066848   # public address only
+BSC_TESTNET_RPC_URL=https://bsc-testnet-rpc.publicnode.com
+BSC_TESTNET_RPC_FALLBACK=https://data-seed-prebsc-1-s1.bnbchain.org:8545
+OPBNB_TESTNET_RPC_URL=https://opbnb-testnet-rpc.bnbchain.org
+BSCSCAN_API_KEY=<optional, for verification>
+OPBNBSCAN_API_KEY=<optional, for verification>
+```
+
+### `agent/.env` (Fastify)
+```bash
+AGENT_PRIVATE_KEY=<agent signer private key — the only key allowed to sign claims>
+ESCROW_CONTRACT_ADDRESS=0xbe576879961Bd8cdf7CfA72F146C8a3E352c7260
+CHAIN_ID=97
+GEMINI_API_KEY=<your key>
+GITHUB_TOKEN=<PAT with repo scope, receives webhooks>
+DATABASE_PATH=./data/bountra.db
+PORT=3001
+HOST=0.0.0.0
+```
+
+> `AGENT_PRIVATE_KEY` has **no fallback**. The agent refuses to start without it.
+> An earlier version silently fell back to Anvil account #0 — a key printed in
+> every Foundry tutorial — which would have produced signatures that verify
+> against a publicly known address.
+
+### `web/.env.local` (Next.js)
+```bash
+NEXT_PUBLIC_PRIVY_APP_ID=<from dashboard.privy.io>
+NEXT_PUBLIC_ESCROW_CONTRACT_ADDRESS=0xbe576879961Bd8cdf7CfA72F146C8a3E352c7260
+NEXT_PUBLIC_CHAIN_ID=97
+NEXT_PUBLIC_AGENT_API_URL=http://localhost:3001
+NEXT_PUBLIC_MOCK_USDT_ADDRESS=<optional>
+```
+
+The webhook endpoint needs a **public URL** during the demo. Use a tunnel to
+port 3001 and register the resulting URL as the GitHub App webhook target.
 
 ---
 
@@ -88,9 +130,10 @@ pnpm dev # runs on http://localhost:3000
 ---
 
 ## 📹 Hackathon Demo & Presentation
-* [Demo Walkthrough Script](docs/DEMO_SCRIPT.md)
-* [Submission Pitch Deck](docs/PITCH.md)
-* [Master Development Plan](docs/plans/master-plan.md)
+
+The demo script, pitch deck and development plan are maintained outside the
+public repo. What a judge needs is in this README: the 5-layer audit pipeline,
+the deployed contract address, the test counts, and the Quickstart above.
 
 ---
 

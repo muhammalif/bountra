@@ -8,6 +8,13 @@ node_modules/
 dist/
 .next/
 *.log
+__pycache__/
+*.pyc
+
+# Docs
+# Internal planning docs live outside the public repo.
+# Untracked on purpose — see README for the public substitute.
+/docs/
 
 # Env
 .env
@@ -15,6 +22,9 @@ dist/
 .env.*.local
 !.env.example
 !.env.template
+
+# Internal agent briefing
+/AGENTS.md
 
 # Database
 agent/data/*.db
