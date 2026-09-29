@@ -6,8 +6,9 @@ import { usePrivy } from "@privy-io/react-auth";
 import { X, ExternalLink, ShieldCheck, CheckCircle2, Loader2, Sparkles, AlertCircle, Clock, Eye, GitPullRequest, ArrowRight } from "lucide-react";
 import { BountyItem } from "@/types/bounty";
 import { BOUNTRA_ESCROW_ADDRESS, BOUNTRA_ESCROW_ABI } from "@/config/contracts";
-import { formatBscScanUrl, formatAddress } from "@/lib/utils";
+import { formatAddress } from "@/lib/utils";
 import { useClaimEligibility, useClaimAuthorization } from "@/hooks/useClaimAuthorization";
+import { TxHashChip } from "./TxHashChip";
 import { cn } from "@/lib/utils";
 
 interface ClaimBountyDrawerProps {
@@ -474,6 +475,8 @@ export function ClaimBountyDrawer({
         </div>
       </div>
 
+      <TxHashChip hash={bounty.claimTxHash} label="Settlement transaction" />
+
       <div className="space-y-2.5">
         <h4 className="text-xs font-mono font-semibold text-content-primary uppercase">Audit Verification</h4>
         {[
@@ -651,17 +654,7 @@ export function ClaimBountyDrawer({
                 <p className="text-xs text-content-secondary mb-4 leading-relaxed">
                   {bounty.amountFormatted} {bounty.tokenSymbol} has been transferred directly from the on-chain escrow vault to your wallet address.
                 </p>
-                {claimTxHash && (
-                  <a
-                    href={formatBscScanUrl("tx", claimTxHash)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 font-mono text-xs text-brand-primary hover:underline mb-6"
-                  >
-                    <span>View Settlement on BscScan</span>
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </a>
-                )}
+                <TxHashChip hash={claimTxHash} className="max-w-sm mb-4" />
               </div>
             ) : bounty.status === "claimed" ? (
               renderClaimedContent()

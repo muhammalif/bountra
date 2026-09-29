@@ -27,6 +27,12 @@ export interface AgentVerdict {
   score: number | null;
   comment: string | null;
   auditId: number;
+  /**
+   * Settlement proof, when the bounty has been claimed AND the agent recorded
+   * the transaction. Stays null for an unclaimed bounty and for a claimed one
+   * whose confirmation never landed.
+   */
+  claimTxHash: string | null;
 }
 
 function overlayVerdict(
@@ -151,6 +157,7 @@ export function useOnChainBounties() {
             claimed: data.claimed,
             cancelled: data.cancelled,
             status,
+            claimTxHash: verdicts[i]?.claimTxHash ?? undefined,
             isOnChain: true,
           } as BountyItem);
         } catch (err: any) {

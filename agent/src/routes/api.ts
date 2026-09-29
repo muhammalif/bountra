@@ -57,7 +57,8 @@ export async function apiRoutes(app: FastifyInstance) {
             verdict: row.aiVerdict,
             score: row.aiScore,
             comment: row.aiComment,
-            auditId: row.auditId
+            auditId: row.auditId,
+            claimTxHash: row.claimTxHash
           }
         ])
       )

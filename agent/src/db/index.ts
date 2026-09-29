@@ -198,6 +198,11 @@ export async function listLatestVerdictsByBounty(dbInstance = db) {
       aiScore: schema.auditLogs.aiScore,
       aiComment: schema.auditLogs.aiComment,
       auditId: schema.auditLogs.id,
+      // Settlement proof travels with the verdict. A claimed bounty read back
+      // from the feed has no other way to reach its transaction: the claim
+      // happened in someone else's browser session, so the hash exists only
+      // here. Null until /api/claim/confirm records it.
+      claimTxHash: schema.auditLogs.claimTxHash,
     })
     .from(schema.auditLogs)
     .orderBy(desc(schema.auditLogs.id))
