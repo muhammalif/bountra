@@ -126,6 +126,29 @@
 ### Frontend
 - No mandatory test coverage for hackathon MVP
 - Manual verification: connect wallet → create bounty → view explorer → check drawer
+- **Mock and on-chain data must not share an ID namespace.** Displaying a mock
+  row is fine; sending its id to the contract is not. Either offset mock ids out
+  of the on-chain range (e.g. `+ 100`) or gate the row on a real on-chain bounty
+  with a matching id. A mock-only row reaches the contract as
+  `claimBounty(id)` and reverts with `BountyNotFound()`.
+- **One convention for one data set.** The same bounty list must be merged and
+  id-assigned the same way on every page. Two pages can disagree about the
+  offset and one of them will send ids the contract cannot resolve.
+- **Write contract ABIs from the compiler artifact, never by hand.** Two
+  parameters of the same type in the wrong order produce an identical selector
+  and no compile error; the frontend then sends `commitHash` where the contract
+  expects `prUrl` and the call fails at signature recovery instead. When an
+  argument order changes in Solidity, regenerate or re-check every caller.
+- **A wallet signature is not a transaction.** A wallet that opens for signing
+  proves nothing about the contract. Verify the receipt status, the emitted
+  event, and the resulting state; a reverted transaction still collected a valid
+  signature from the user.
+
+### Layout
+- A slide-over panel must be anchored to one edge with a fixed width, never
+  `w-screen` inside an edge-anchored wrapper. A full-viewport panel offset by the
+  wrapper's own padding overflows the viewport by that padding, which shifts
+  visible content sideways and reads as a stacking or z-index glitch.
 
 ---
 

@@ -88,7 +88,7 @@ export function HeroSection({
             href={formatBscScanUrl("address", BOUNTRA_ESCROW_ADDRESS)}
             target="_blank"
             rel="noreferrer"
-            className="text-[11px] sm:text-xs text-brand-primary hover:underline font-mono inline-block"
+            className="inline-flex items-center min-h-[44px] text-[11px] sm:text-xs text-brand-primary hover:underline font-mono"
           >
             BSC Testnet (Chain 97) ↗
           </a>

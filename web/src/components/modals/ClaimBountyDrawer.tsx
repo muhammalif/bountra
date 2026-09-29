@@ -162,7 +162,7 @@ export function ClaimBountyDrawer({
           href={bounty.issueUrl}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-1.5 font-mono text-xs text-brand-primary hover:underline"
+          className="inline-flex items-center gap-1.5 min-h-[44px] font-mono text-xs text-brand-primary hover:underline"
         >
           <span>{bounty.repo}#{bounty.issueNumber}</span>
           <ExternalLink className="h-3 w-3" />
@@ -557,7 +557,7 @@ export function ClaimBountyDrawer({
             href={bounty.issueUrl}
             target="_blank"
             rel="noreferrer"
-            className="mt-3 w-full flex items-center justify-center gap-2 rounded-lg bg-brand-primary text-black font-semibold text-xs py-2.5 hover:bg-brand-hover transition-colors"
+            className="mt-3 w-full flex items-center justify-center gap-2 rounded-lg bg-brand-primary text-black font-semibold text-xs py-2.5 hover:bg-brand-hover transition-colors min-h-[44px] active:scale-[0.98]"
           >
             <span>Open Issue on GitHub</span>
             <ExternalLink className="h-3.5 w-3.5" />
@@ -570,8 +570,8 @@ export function ClaimBountyDrawer({
   // ─── Main Drawer ───
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="absolute inset-y-0 right-0 max-w-full flex w-full sm:pl-10">
-        <div className="w-full sm:w-screen sm:max-w-md bg-surface-secondary border-l border-surface-border p-4 sm:p-6 flex flex-col justify-between shadow-2xl max-h-[100dvh] sm:max-h-none sm:h-auto overflow-y-auto overscroll-contain">
+      <div className="absolute inset-y-0 right-0 flex w-full sm:w-auto sm:pl-10 sm:justify-end">
+        <div className="w-full sm:w-[28rem] sm:max-w-[calc(100vw-2.5rem)] bg-surface-secondary border-l border-surface-border p-4 sm:p-6 flex flex-col justify-between shadow-2xl max-h-[100dvh] sm:max-h-none sm:h-auto overflow-y-auto overscroll-contain">
           <div>
             <div className="flex items-center justify-between border-b border-surface-border pb-4 mb-5">
               <div>
