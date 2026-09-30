@@ -127,6 +127,19 @@ payout address (`Wallet: 0x...`), otherwise nothing is signed.
 For a demo, skip all of this: `POST /api/audit/evaluate` runs the same CI and
 integrity gates and needs no hook.
 
+**Tunnel notes.** The `trycloudflare.com` host changes every time you restart
+cloudflared, so the hook config has to be updated with the new URL. Verify the
+public URL with an actual POST before you trust it — `GET /health` succeeding
+does not prove POST works. `localhost.run` free tunnels only proxy GET and
+answer `503 no tunnel here` to POST, which looks like a broken agent when it
+is not. Wait for the agent's `/health` before registering; under heavy load it
+can take up to a minute to bind its port.
+
+The hook currently subscribes to all `pull_request` actions, so `closed` and
+`reopened` also arrive and are recorded before being skipped. That is harmless
+but wasteful — filter to `opened`/`synchronize`/`reopened` if you care about
+provider spend.
+
 ---
 
 ## 📄 License
