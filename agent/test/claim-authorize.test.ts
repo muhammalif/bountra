@@ -4,6 +4,7 @@ import { buildServer } from "../src/index.js";
 import { recoverMessageAddress, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { computeClaimDigest } from "../src/signer/index.js";
+import { createPassingGithubClient } from "./github-mock.js";
 
 /**
  * Claim authorization contract.
@@ -14,7 +15,7 @@ import { computeClaimDigest } from "../src/signer/index.js";
  * between bounties, wallets, commits or PRs.
  */
 describe("Claim authorization", () => {
-  const app = buildServer();
+  const app = buildServer({ githubClient: createPassingGithubClient() });
   const scope = Date.now();
   const bountyId = 700000 + (scope % 900);
   const devWallet = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";

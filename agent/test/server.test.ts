@@ -1,9 +1,10 @@
 import { describe, it, before } from "node:test";
 import assert from "node:assert/strict";
 import { buildServer } from "../src/index.js";
+import { createPassingGithubClient } from "./github-mock.js";
 
 describe("Fastify Webhook Server & Audit Pipeline Integration", () => {
-  const app = buildServer();
+  const app = buildServer({ githubClient: createPassingGithubClient() });
   const testBountyId = Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 10000);
 
   it("should return healthy status on GET /health", async () => {

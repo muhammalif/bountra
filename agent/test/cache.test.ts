@@ -1,6 +1,7 @@
 import { describe, it, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { buildServer } from "../src/index.js";
+import { createPassingGithubClient } from "./github-mock.js";
 // Unique per run: bounty_id is UNIQUE and the suite shares one on-disk database.
 const RUN = Date.now() % 1_000_000;
 
@@ -10,7 +11,7 @@ const COMMIT = "9876543210abcdef9876543210abcdef98765432";
 const PR = "https://github.com/bountra/demo/pull/1";
 
 function makeApp() {
-  return buildServer();
+  return buildServer({ githubClient: createPassingGithubClient() });
 }
 
 async function seedBounty(app: any, bountyId: number) {

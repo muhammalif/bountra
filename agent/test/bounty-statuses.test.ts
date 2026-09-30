@@ -2,6 +2,7 @@ import { describe, it, before } from "node:test";
 import assert from "node:assert/strict";
 import { buildServer } from "../src/index.js";
 import { listLatestVerdictsByBounty } from "../src/db/index.js";
+import { createPassingGithubClient } from "./github-mock.js";
 
 /**
  * Explore feed verdicts.
@@ -69,7 +70,7 @@ async function audit(app: ReturnType<typeof buildServer>, bountyId: number, diff
 }
 
 describe("GET /api/bounties/statuses", () => {
-  const app = buildServer();
+  const app = buildServer({ githubClient: createPassingGithubClient() });
 
   before(async () => {
     await seedBounty(app, PASSED_ID);
