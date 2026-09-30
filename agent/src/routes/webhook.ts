@@ -12,6 +12,7 @@ import { verifyGithubSignature } from "../security/webhookSignature.js";
 import { evaluatePrWithGemini, mockEvaluatePr } from "../evaluator/gemini.js";
 import { requireAgentSigningKey, signBountyClaim } from "../signer/index.js";
 import { GithubAuditClient, parseGithubIssueOrPrUrl } from "../github/client.js";
+import { formatVerdictComment } from "../github/prComment.js";
 import type { Address, Hex } from "viem";
 
 export async function webhookRoutes(app: FastifyInstance) {
@@ -127,6 +128,30 @@ export async function webhookRoutes(app: FastifyInstance) {
     let prFromApi;
     let issue;
     const issueRef = bounty.issueUrl ? parseGithubIssueOrPrUrl(bounty.issueUrl) : null;
+
+    // Gate rejections are also developer-facing: a PR that never receives a
+    // comment looks like the agent is broken, not like the gate worked. Uses the
+    // same best-effort contract as the verdict comment.
+    const postGateComment = async (message: string, commitHash: string, violations?: string[]) => {
+      try {
+        await githubClient.postPrComment(
+          parsed.owner,
+          parsed.repo,
+          parsed.issueOrPrNumber,
+          formatVerdictComment({
+            verdict: "failed",
+            score: 0,
+            summary: message,
+            weaknesses: violations?.length ? violations : [message],
+            bountyId: bounty.bountyId,
+            amount: bounty.amount,
+            commitHash
+          })
+        );
+      } catch (err) {
+        app.log.error({ prUrl, err: (err as Error).message }, "failed to post gate comment");
+      }
+    };
     try {
       [prFromApi, issue] = await Promise.all([
         githubClient.fetchPullRequest(parsed.owner, parsed.repo, parsed.issueOrPrNumber),
@@ -151,6 +176,7 @@ export async function webhookRoutes(app: FastifyInstance) {
 
     // Hard Gate: CI must actually be green. Reject before spending any LLM quota.
     if (!prFromApi.ciPassed) {
+      const message = "Hard Gate failed: CI checks are not green";
       await createAuditLog({
         bountyId: bounty.bountyId,
         prUrl,
@@ -161,13 +187,14 @@ export async function webhookRoutes(app: FastifyInstance) {
         integrityOk: 1,
         aiScore: 0,
         aiVerdict: "failed",
-        aiComment: "Hard Gate failed: CI checks are not green",
+        aiComment: message,
         status: "failed"
       });
+      await postGateComment(message, prFromApi.headCommitHash);
       await markWebhookProcessed(payloadHash);
       return reply.code(200).send({
         status: "rejected_ci",
-        message: "Hard Gate failed: CI checks are not green",
+        message,
         ciDetails: prFromApi.ciDetails
       });
     }
@@ -175,6 +202,7 @@ export async function webhookRoutes(app: FastifyInstance) {
     // Layer 2: test/CI tampering. Runs before the LLM, same as the manual route.
     const tamperingCheck = checkTestTampering(prFromApi.changedFiles);
     if (!tamperingCheck.ok) {
+      const message = `Security Gate Failed: ${tamperingCheck.reason}`;
       await createAuditLog({
         bountyId: bounty.bountyId,
         prUrl,
@@ -185,13 +213,14 @@ export async function webhookRoutes(app: FastifyInstance) {
         integrityOk: 0,
         aiScore: 0,
         aiVerdict: "failed",
-        aiComment: `Security Gate Failed: ${tamperingCheck.reason}`,
+        aiComment: message,
         status: "failed"
       });
+      await postGateComment(message, prFromApi.headCommitHash, tamperingCheck.violations);
       await markWebhookProcessed(payloadHash);
       return reply.code(200).send({
         status: "rejected_tampering",
-        message: tamperingCheck.reason,
+        message,
         violations: tamperingCheck.violations
       });
     }
@@ -241,13 +270,39 @@ export async function webhookRoutes(app: FastifyInstance) {
       status: aiResult.verdict === "passed" ? "passed" : "failed"
     });
 
+    // FR-7: post the verdict back to the PR. Commenting is best-effort — a
+    // comment failure must not discard a completed audit or the signature, so
+    // it is logged and the audit result is still returned.
+    let commentPosted = false;
+    try {
+      await githubClient.postPrComment(
+        parsed.owner,
+        parsed.repo,
+        parsed.issueOrPrNumber,
+        formatVerdictComment({
+          verdict: aiResult.verdict,
+          score: aiResult.score,
+          summary: aiResult.summary,
+          strengths: aiResult.strengths,
+          weaknesses: aiResult.weaknesses,
+          bountyId: bounty.bountyId,
+          amount: bounty.amount,
+          commitHash: prFromApi.headCommitHash
+        })
+      );
+      commentPosted = true;
+    } catch (err) {
+      app.log.error({ prUrl, err: (err as Error).message }, "failed to post verdict comment");
+    }
+
     await markWebhookProcessed(payloadHash);
 
     return reply.code(200).send({
       status: "audited",
       verdict: aiResult.verdict,
       score: aiResult.score,
-      signature
+      signature,
+      commentPosted
     });
   });
 }

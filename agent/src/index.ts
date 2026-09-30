@@ -1,13 +1,27 @@
-// A stale GITHUB_TOKEN exported by the parent shell used to win over .env, and
-// the agent spent its life answering 401 Bad credentials while .env held a
-// working token. Clearing just that key before loading restores .env's value.
+// dotenv does NOT overwrite a variable that already exists, so a stale
+// GITHUB_TOKEN inherited from the parent shell used to win over .env and the
+// agent answered every call with 401 Bad credentials while .env held a working
+// token. Reads masked it: bountra-demo is public, so unauthenticated GETs
+// succeed and only writes (PR comments, FR-7) failed.
 //
 // Do NOT switch to dotenv.config({ override: true }): that clobbers every other
 // variable in .env, including the AGENT_PRIVATE_KEY, ESCROW_CONTRACT_ADDRESS and
 // DATABASE_PATH that test/setup.ts pins. It made the signature tests fail with
 // 409 because the test signature no longer recovered to the pinned signer.
-delete process.env.GITHUB_TOKEN;
 import "dotenv/config";
+import { config as loadEnv } from "dotenv";
+
+// This must be a statement, not a module-level side effect written above the
+// import. ESM hoists every import above all other statements, so
+// `delete process.env.X` placed before `import "dotenv/config"` actually runs
+// AFTER dotenv and removes the value dotenv just loaded — which is why the
+// agent ran with NO token at all and 401'd every write.
+//
+// The delete and the re-load have to be adjacent statements below the import:
+// delete drops the stale inherited value, then loadEnv sees the key as unset
+// and repopulates it from the file. `override: true` is deliberately not used.
+delete process.env.GITHUB_TOKEN;
+loadEnv({ path: ".env" });
 
 import Fastify from "fastify";
 import cors from "@fastify/cors";
