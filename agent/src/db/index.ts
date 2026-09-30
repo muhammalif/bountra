@@ -1,6 +1,6 @@
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
-import { eq, and, desc } from "drizzle-orm";
+import { asc, and, desc, eq, getTableColumns, sql } from "drizzle-orm";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as schema from "./schema.js";
@@ -257,7 +257,7 @@ export async function findReusableAudit(
 }
 
 /**
- * Every passing audit for one developer, newest first.
+ * One passing audit per bounty for one developer, signature-bearing rows first.
  *
  * Drives the Developer Hub claim list: a bounty is only offered as claimable
  * when a passing audit exists for THIS developer, which is also the only case
@@ -266,8 +266,15 @@ export async function findReusableAudit(
  * PR actually evaluated and did it pass".
  */
 export async function listPassedAuditsByDeveloper(developer: string, dbInstance = db) {
-  return dbInstance
-    .select()
+  const rankedAudits = dbInstance
+    .select({
+      ...getTableColumns(schema.auditLogs),
+      rowNumber: sql<number>`row_number() over (
+        partition by ${schema.auditLogs.bountyId}
+        order by case when ${schema.auditLogs.signature} is not null then 0 else 1 end,
+          ${schema.auditLogs.id} desc
+      )`.as("row_number")
+    })
     .from(schema.auditLogs)
     .where(
       and(
@@ -275,7 +282,29 @@ export async function listPassedAuditsByDeveloper(developer: string, dbInstance 
         eq(schema.auditLogs.status, "passed")
       )
     )
-    .orderBy(desc(schema.auditLogs.id))
+    .as("ranked_audits");
+
+  return dbInstance
+    .select({
+      id: rankedAudits.id,
+      bountyId: rankedAudits.bountyId,
+      prUrl: rankedAudits.prUrl,
+      commitHash: rankedAudits.commitHash,
+      developer: rankedAudits.developer,
+      ciStatus: rankedAudits.ciStatus,
+      ciDetail: rankedAudits.ciDetail,
+      integrityOk: rankedAudits.integrityOk,
+      aiScore: rankedAudits.aiScore,
+      aiVerdict: rankedAudits.aiVerdict,
+      aiComment: rankedAudits.aiComment,
+      signature: rankedAudits.signature,
+      claimTxHash: rankedAudits.claimTxHash,
+      status: rankedAudits.status,
+      createdAt: rankedAudits.createdAt
+    })
+    .from(rankedAudits)
+    .where(eq(rankedAudits.rowNumber, 1))
+    .orderBy(asc(rankedAudits.bountyId))
     .all();
 }
 
