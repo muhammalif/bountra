@@ -23,9 +23,10 @@ import { config as loadEnv } from "dotenv";
 delete process.env.GITHUB_TOKEN;
 loadEnv({ path: ".env" });
 
-import Fastify from "fastify";
+import Fastify, { type FastifyServerOptions } from "fastify";
 import cors from "@fastify/cors";
 import { fileURLToPath } from "node:url";
+import { GithubAuditClient } from "./github/client.js";
 import { apiRoutes } from "./routes/api.js";
 import { webhookRoutes } from "./routes/webhook.js";
 
@@ -59,10 +60,15 @@ function allowedOrigins(): string[] | true {
   return list;
 }
 
-export function buildServer(opts = {}) {
+export interface BuildServerOptions extends FastifyServerOptions {
+  githubClient?: GithubAuditClient;
+}
+
+export function buildServer(opts: BuildServerOptions = {}) {
+  const { githubClient, ...fastifyOptions } = opts;
   const app = Fastify({
     logger: false,
-    ...opts
+    ...fastifyOptions
   });
 
   app.register(cors, { origin: allowedOrigins() });
@@ -89,8 +95,8 @@ export function buildServer(opts = {}) {
     }
   );
 
-  app.register(apiRoutes);
-  app.register(webhookRoutes);
+  app.register(apiRoutes, { githubClient });
+  app.register(webhookRoutes, { githubClient });
 
   return app;
 }
@@ -115,4 +121,3 @@ const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.arg
 if (isMain) {
   start();
 }
-

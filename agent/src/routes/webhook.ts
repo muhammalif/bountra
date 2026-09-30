@@ -22,8 +22,12 @@ import type { Address, Hex } from "viem";
 // its code, so re-auditing on it would spend LLM quota to reach the same verdict.
 const AUDITABLE_PULL_REQUEST_ACTIONS = new Set(["opened", "synchronize"]);
 
-export async function webhookRoutes(app: FastifyInstance) {
-  const githubClient = new GithubAuditClient();
+export interface WebhookRouteOptions {
+  githubClient?: GithubAuditClient;
+}
+
+export async function webhookRoutes(app: FastifyInstance, options: WebhookRouteOptions = {}) {
+  const githubClient = options.githubClient || new GithubAuditClient();
 
   app.post("/webhook/github", async (request: FastifyRequest, reply: FastifyReply) => {
     const event = request.headers["x-github-event"] as string;
@@ -187,7 +191,6 @@ export async function webhookRoutes(app: FastifyInstance) {
       ]);
     } catch (err) {
       app.log.error({ prUrl, err: (err as Error).message }, "failed to fetch PR from GitHub");
-      await markWebhookProcessed(payloadHash);
       return reply.code(502).send({ status: "error", message: "GitHub API unavailable" });
     }
 
@@ -198,6 +201,32 @@ export async function webhookRoutes(app: FastifyInstance) {
         { payloadSha: headSha, apiSha: prFromApi.headCommitHash },
         "head SHA mismatch between payload and GitHub API; using API value"
       );
+    }
+
+    if (!prFromApi.diffAvailable) {
+      const message = "Hard Gate failed: PR diff could not be fetched";
+      const evidence = prFromApi.ciDetails.evidence;
+      const ciStatus = evidence === "unavailable" ? "unknown" : prFromApi.ciPassed ? "passed" : "failed";
+      await createAuditLog({
+        bountyId: bounty.bountyId,
+        prUrl,
+        commitHash: prFromApi.headCommitHash,
+        developer: devWallet,
+        ciStatus,
+        ciDetail: JSON.stringify({ ...prFromApi.ciDetails, diffAvailable: false }),
+        integrityOk: null,
+        aiScore: 0,
+        aiVerdict: "failed",
+        aiComment: message,
+        status: "failed"
+      });
+      await postGateComment(message, prFromApi.headCommitHash);
+      await markWebhookProcessed(payloadHash);
+      return reply.code(200).send({
+        status: "rejected_diff",
+        message,
+        signature: null
+      });
     }
 
     // Hard Gate: CI must actually be green. Reject before spending any LLM quota.

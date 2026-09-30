@@ -28,8 +28,16 @@ export interface PrData {
   headCommitHash: string;
   changedFiles: ChangedFile[];
   diff: string;
+  diffAvailable: boolean;
   ciPassed: boolean;
   ciDetails: Record<string, unknown>;
+}
+
+export type CiEvidence = "check-runs" | "combined-status" | "none" | "unavailable";
+
+export interface CiData {
+  ciPassed: boolean;
+  ciDetails: Record<string, unknown> & { evidence: CiEvidence };
 }
 
 export interface IssueData {
@@ -43,10 +51,8 @@ export interface IssueData {
 export class GithubAuditClient {
   private octokit: Octokit;
 
-  constructor(token?: string) {
-    this.octokit = new Octokit({
-      auth: token || process.env.GITHUB_TOKEN
-    });
+  constructor(token?: string, octokit?: Octokit) {
+    this.octokit = octokit || new Octokit({ auth: token || process.env.GITHUB_TOKEN });
   }
 
   async fetchIssue(owner: string, repo: string, issueNumber: number): Promise<IssueData> {
@@ -84,6 +90,7 @@ export class GithubAuditClient {
 
     // Fetch unified diff
     let diff = "";
+    let diffAvailable = false;
     try {
       const diffRes = await this.octokit.pulls.get({
         owner,
@@ -91,53 +98,23 @@ export class GithubAuditClient {
         pull_number: prNumber,
         mediaType: { format: "diff" }
       });
-      diff = typeof diffRes.data === "string" ? diffRes.data : "";
-    } catch {
-      diff = "";
-    }
-
-    // Check CI check-runs for the head commit
-    const headCommitHash = prRes.data.head.sha;
-    let ciPassed = false;
-    let ciDetails: Record<string, unknown> = {};
-
-    try {
-      const checkRuns = await this.octokit.checks.listForRef({
+      if (typeof diffRes.data === "string") {
+        diff = diffRes.data;
+        diffAvailable = true;
+      } else {
+        console.error("GitHub returned a non-string PR diff", { owner, repo, prNumber });
+      }
+    } catch (err) {
+      console.error("Failed to fetch PR diff from GitHub", {
         owner,
         repo,
-        ref: headCommitHash
+        prNumber,
+        error: err instanceof Error ? err.message : String(err)
       });
-
-      const totalRuns = checkRuns.data.total_count;
-      const successfulRuns = checkRuns.data.check_runs.filter(
-        (c) => c.status === "completed" && c.conclusion === "success"
-      ).length;
-
-      ciPassed = totalRuns > 0 && successfulRuns === totalRuns;
-      ciDetails = {
-        total: totalRuns,
-        successful: successfulRuns,
-        checkRuns: checkRuns.data.check_runs.map((c) => ({
-          name: c.name,
-          status: c.status,
-          conclusion: c.conclusion
-        }))
-      };
-    } catch {
-      // If no checks API configured, fallback to checking combined statuses
-      try {
-        const statuses = await this.octokit.repos.getCombinedStatusForRef({
-          owner,
-          repo,
-          ref: headCommitHash
-        });
-        ciPassed = statuses.data.state === "success";
-        ciDetails = { state: statuses.data.state, total_count: statuses.data.total_count };
-      } catch {
-        ciPassed = true; // Fallback if repo has no CI configured
-        ciDetails = { notice: "No CI check-runs found on repository" };
-      }
     }
+
+    const headCommitHash = prRes.data.head.sha;
+    const ci = await this.fetchCiStatus(owner, repo, headCommitHash);
 
     return {
       owner,
@@ -150,9 +127,98 @@ export class GithubAuditClient {
       headCommitHash,
       changedFiles,
       diff,
-      ciPassed,
-      ciDetails
+      diffAvailable,
+      ciPassed: ci.ciPassed,
+      ciDetails: ci.ciDetails
     };
+  }
+
+  async fetchCiStatus(owner: string, repo: string, ref: string): Promise<CiData> {
+    let checkRunsError: string | undefined;
+
+    try {
+      const checkRuns = await this.octokit.checks.listForRef({ owner, repo, ref });
+      const totalRuns = checkRuns.data.total_count;
+
+      if (totalRuns > 0) {
+        const successfulRuns = checkRuns.data.check_runs.filter(
+          (c) => c.status === "completed" && c.conclusion === "success"
+        ).length;
+
+        return {
+          ciPassed: successfulRuns === totalRuns,
+          ciDetails: {
+            evidence: "check-runs",
+            total: totalRuns,
+            successful: successfulRuns,
+            checkRuns: checkRuns.data.check_runs.map((c) => ({
+              name: c.name,
+              status: c.status,
+              conclusion: c.conclusion
+            }))
+          }
+        };
+      }
+    } catch (err) {
+      checkRunsError = err instanceof Error ? err.message : String(err);
+      console.error("Failed to fetch GitHub check-runs", { owner, repo, ref, error: checkRunsError });
+    }
+
+    try {
+      const statuses = await this.octokit.repos.getCombinedStatusForRef({ owner, repo, ref });
+      const totalStatuses = statuses.data.total_count;
+
+      if (totalStatuses === 0) {
+        if (checkRunsError) {
+          return {
+            ciPassed: false,
+            ciDetails: {
+              evidence: "unavailable",
+              errors: {
+                checkRuns: checkRunsError,
+                combinedStatus: "No combined statuses found to confirm absent CI"
+              }
+            }
+          };
+        }
+
+        return {
+          ciPassed: true,
+          ciDetails: {
+            evidence: "none",
+            total_count: 0
+          }
+        };
+      }
+
+      return {
+        ciPassed: statuses.data.state === "success",
+        ciDetails: {
+          evidence: "combined-status",
+          state: statuses.data.state,
+          total_count: totalStatuses,
+          ...(checkRunsError ? { checkRunsError } : {})
+        }
+      };
+    } catch (err) {
+      const combinedStatusError = err instanceof Error ? err.message : String(err);
+      console.error("Failed to fetch GitHub combined status", {
+        owner,
+        repo,
+        ref,
+        error: combinedStatusError
+      });
+      return {
+        ciPassed: false,
+        ciDetails: {
+          evidence: "unavailable",
+          errors: {
+            checkRuns: checkRunsError || null,
+            combinedStatus: combinedStatusError
+          }
+        }
+      };
+    }
   }
 
   async postPrComment(owner: string, repo: string, prNumber: number, comment: string): Promise<void> {

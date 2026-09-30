@@ -21,9 +21,16 @@ import {
 import { evaluatePrWithGemini, mockEvaluatePr, EvaluatorUnavailableError } from "../evaluator/gemini.js";
 import { checkTestTampering } from "../evaluator/security.js";
 import { verifyClaimOnChain } from "../chain/verifyClaim.js";
+import { GithubAuditClient, parseGithubIssueOrPrUrl, type CiData } from "../github/client.js";
 import type { Address, Hex } from "viem";
 
-export async function apiRoutes(app: FastifyInstance) {
+export interface ApiRouteOptions {
+  githubClient?: GithubAuditClient;
+}
+
+export async function apiRoutes(app: FastifyInstance, options: ApiRouteOptions = {}) {
+  const githubClient = options.githubClient || new GithubAuditClient();
+
   // Health check
   app.get("/health", async () => {
     return {
@@ -169,6 +176,55 @@ export async function apiRoutes(app: FastifyInstance) {
         return reply.code(400).send({ error: "Missing required audit parameters" });
       }
 
+      const parsedPr = parseGithubIssueOrPrUrl(prUrl);
+      if (!parsedPr) {
+        return reply.code(400).send({ error: "PR URL is not parseable" });
+      }
+
+      let ciData: CiData;
+      try {
+        ciData = await githubClient.fetchCiStatus(parsedPr.owner, parsedPr.repo, commitHash);
+      } catch (err) {
+        const error = err instanceof Error ? err.message : String(err);
+        app.log.error({ prUrl, commitHash, error }, "failed to fetch CI status from GitHub");
+        ciData = {
+          ciPassed: false,
+          ciDetails: { evidence: "unavailable", errors: { client: error } }
+        };
+      }
+
+      const ciEvidence = ciData.ciDetails.evidence;
+      const ciStatus = ciData.ciPassed ? "passed" : ciEvidence === "unavailable" ? "unknown" : "failed";
+      const ciDetail = JSON.stringify(ciData.ciDetails);
+
+      if (!ciData.ciPassed) {
+        const unavailable = ciStatus === "unknown";
+        const message = unavailable
+          ? "Hard Gate unavailable: CI evidence could not be fetched"
+          : "Hard Gate failed: CI checks are not green";
+        const audit = await createAuditLog({
+          bountyId,
+          prUrl,
+          commitHash,
+          developer: devWallet,
+          ciStatus,
+          ciDetail,
+          integrityOk: null,
+          aiScore: 0,
+          aiVerdict: unavailable ? "error" : "failed",
+          aiComment: message,
+          status: unavailable ? "error" : "failed"
+        });
+
+        return reply.code(unavailable ? 503 : 200).send({
+          success: false,
+          verdict: unavailable ? "error" : "failed",
+          reason: message,
+          signature: null,
+          auditLog: audit
+        });
+      }
+
       const tamperingCheck = checkTestTampering(changedFiles);
       if (!tamperingCheck.ok) {
         const audit = await createAuditLog({
@@ -176,7 +232,8 @@ export async function apiRoutes(app: FastifyInstance) {
           prUrl,
           commitHash,
           developer: devWallet,
-          ciStatus: "passed",
+          ciStatus,
+          ciDetail,
           integrityOk: 0,
           aiScore: 0,
           aiVerdict: "failed",
@@ -242,8 +299,8 @@ export async function apiRoutes(app: FastifyInstance) {
             prUrl,
             commitHash,
             developer: devWallet,
-            ciStatus: "passed",
-            ciDetail: JSON.stringify({ automated: true }),
+            ciStatus,
+            ciDetail,
             integrityOk: 1,
             aiScore: 0,
             aiVerdict: "error",
@@ -289,8 +346,8 @@ export async function apiRoutes(app: FastifyInstance) {
         prUrl,
         commitHash,
         developer: devWallet,
-        ciStatus: "passed",
-        ciDetail: JSON.stringify({ automated: true }),
+        ciStatus,
+        ciDetail,
         integrityOk: 1,
         aiScore: aiResult.score,
         aiVerdict: aiResult.verdict,

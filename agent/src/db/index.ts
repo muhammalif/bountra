@@ -280,7 +280,12 @@ export async function listPassedAuditsByDeveloper(developer: string, dbInstance 
 }
 
 export async function recordWebhookEvent(data: NewWebhookEvent, dbInstance = db) {
-  return dbInstance.insert(schema.webhookEvents).values(data).returning().get();
+  return dbInstance
+    .insert(schema.webhookEvents)
+    .values(data)
+    .onConflictDoNothing({ target: schema.webhookEvents.payloadHash })
+    .returning()
+    .get();
 }
 
 export async function isWebhookProcessed(payloadHash: string, dbInstance = db) {
