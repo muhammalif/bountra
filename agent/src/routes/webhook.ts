@@ -1,5 +1,4 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import * as crypto from "node:crypto";
 import {
   recordWebhookEvent,
   isWebhookProcessed,
@@ -13,6 +12,7 @@ import { evaluatePrWithGemini, mockEvaluatePr } from "../evaluator/gemini.js";
 import { requireAgentSigningKey, signBountyClaim } from "../signer/index.js";
 import { GithubAuditClient, parseGithubIssueOrPrUrl } from "../github/client.js";
 import { formatVerdictComment } from "../github/prComment.js";
+import { buildWebhookDedupKey } from "./webhook-dedup-key.js";
 import type { Address, Hex } from "viem";
 
 // The only pull_request actions that can change a verdict (docs/PRD.md FR-2).
@@ -59,9 +59,7 @@ export async function webhookRoutes(app: FastifyInstance, options: WebhookRouteO
       return reply.code(401).send({ status: "error", message: `Invalid signature: ${verified.reason}` });
     }
 
-    // Deduplication via SHA-256 payload hash
-    const payloadString = JSON.stringify(body);
-    const payloadHash = crypto.createHash("sha256").update(payloadString).digest("hex");
+    const payloadHash = buildWebhookDedupKey(event, body);
 
     const alreadyProcessed = await isWebhookProcessed(payloadHash);
     if (alreadyProcessed) {
