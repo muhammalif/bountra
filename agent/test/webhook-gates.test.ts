@@ -158,3 +158,92 @@ describe("Webhook pre-flight gates", () => {
     assert.equal(JSON.parse(second.body).status, "ignored");
   });
 });
+
+// docs/PRD.md FR-2 names exactly two audit-triggering actions. The other
+// pull_request actions describe PR metadata rather than code, so a delivery
+// carrying one must be dropped before the bounty lookup, the GitHub API call or
+// any LLM spend. A PR that is closed or merely relabelled is already judged;
+// re-auditing it costs quota and can only reach the same verdict.
+describe("Webhook pull_request action filter", () => {
+  const UNAUDITABLE = [
+    "closed",
+    "reopened",
+    "edited",
+    "labeled",
+    "unlabeled",
+    "review_requested",
+    "assigned",
+    "ready_for_review",
+    "converted_to_draft"
+  ];
+
+  for (const action of UNAUDITABLE) {
+    it(`ignores pull_request.${action}`, async () => {
+      const res = await app.inject(
+        prEvent({
+          action,
+          pull_request: {
+            html_url: "https://github.com/bountra/demo/pull/4",
+            // A body that would otherwise pass both gates: the point is that the
+            // action alone is enough to stop it, before any of this is read.
+            body: "Closes https://github.com/bountra/demo/issues/4\nWallet: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+            title: "metadata change",
+            number: 4,
+            head: { sha: "4".repeat(40) }
+          }
+        })
+      );
+      assert.equal(res.statusCode, 200);
+      const body = JSON.parse(res.body);
+      assert.equal(body.status, "ignored");
+      assert.match(body.message, new RegExp(action));
+      // Nothing downstream may run: no verdict, no signature, no comment.
+      assert.equal(body.signature, undefined);
+      assert.equal(body.commentPosted, undefined);
+    });
+  }
+
+  it("still audits pull_request.opened", async () => {
+    const res = await app.inject(
+      prEvent({
+        action: "opened",
+        pull_request: {
+          html_url: "https://github.com/bountra/demo/pull/5",
+          body: "Closes https://github.com/bountra/demo/issues/no-such-issue\nWallet: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+          title: "real submission",
+          number: 5,
+          head: { sha: "5".repeat(40) }
+        }
+      })
+    );
+    assert.equal(res.statusCode, 200);
+    // Reaching "skipped" proves the request passed the action gate and got as
+    // far as the bounty lookup; "ignored" would mean the filter ate it.
+    assert.equal(JSON.parse(res.body).status, "skipped");
+  });
+
+  it("still audits pull_request.synchronize", async () => {
+    const res = await app.inject(
+      prEvent({
+        action: "synchronize",
+        pull_request: {
+          html_url: "https://github.com/bountra/demo/pull/6",
+          body: "Closes https://github.com/bountra/demo/issues/no-such-issue\nWallet: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+          title: "new commit pushed",
+          number: 6,
+          head: { sha: "6".repeat(40) }
+        }
+      })
+    );
+    assert.equal(res.statusCode, 200);
+    assert.equal(JSON.parse(res.body).status, "skipped");
+  });
+
+  it("does not apply the filter to other event types", async () => {
+    // check_run shares the route; a pull_request-shaped action field on another
+    // event must not be judged by a pull_request rule.
+    const res = await app.inject(prEvent({ action: "completed" }, "check_run"));
+    assert.equal(res.statusCode, 200);
+    assert.notEqual(JSON.parse(res.body).status, "ignored");
+  });
+});

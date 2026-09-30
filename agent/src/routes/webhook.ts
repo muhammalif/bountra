@@ -15,6 +15,13 @@ import { GithubAuditClient, parseGithubIssueOrPrUrl } from "../github/client.js"
 import { formatVerdictComment } from "../github/prComment.js";
 import type { Address, Hex } from "viem";
 
+// The only pull_request actions that can change a verdict (docs/PRD.md FR-2).
+// `opened` is the first submission; `synchronize` fires on every new push, which
+// is the only thing that invalidates a previous audit. Everything else — closed,
+// reopened, edited, labeled, review_requested — describes the PR's metadata, not
+// its code, so re-auditing on it would spend LLM quota to reach the same verdict.
+const AUDITABLE_PULL_REQUEST_ACTIONS = new Set(["opened", "synchronize"]);
+
 export async function webhookRoutes(app: FastifyInstance) {
   const githubClient = new GithubAuditClient();
 
@@ -59,6 +66,25 @@ export async function webhookRoutes(app: FastifyInstance) {
 
     if (event !== "pull_request" && event !== "check_run") {
       return reply.code(200).send({ status: "ignored", message: `Event ${event} not handled` });
+    }
+
+    // Only the two actions FR-2 names can start an audit. Every other
+    // pull_request action (closed, reopened, edited, labeled, review_requested…)
+    // would otherwise reach the bounty lookup and the LLM, re-auditing work that
+    // was already judged. Filtered before any DB write or API call, so an
+    // irrelevant action costs nothing.
+    //
+    // A re-audit is still reachable without `synchronize`: a new commit always
+    // emits it, and that is the only signal that invalidates a previous verdict.
+    if (event === "pull_request" && !AUDITABLE_PULL_REQUEST_ACTIONS.has(body.action as string)) {
+      app.log.debug(
+        { action: body.action },
+        "ignoring pull_request action that cannot change a verdict"
+      );
+      return reply.code(200).send({
+        status: "ignored",
+        message: `pull_request action ${String(body.action)} not audited`
+      });
     }
 
     const pr = (body.pull_request as Record<string, unknown>) || {};

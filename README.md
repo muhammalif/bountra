@@ -135,10 +135,22 @@ answer `503 no tunnel here` to POST, which looks like a broken agent when it
 is not. Wait for the agent's `/health` before registering; under heavy load it
 can take up to a minute to bind its port.
 
-The hook currently subscribes to all `pull_request` actions, so `closed` and
-`reopened` also arrive and are recorded before being skipped. That is harmless
-but wasteful — filter to `opened`/`synchronize`/`reopened` if you care about
-provider spend.
+Only two `pull_request` actions are audited: `opened` (first submission) and
+`synchronize` (a new commit, the only thing that invalidates a prior verdict).
+Every other action — `closed`, `reopened`, `edited`, `labeled` — is answered
+`200 {"status":"ignored"}` before the bounty lookup, so a metadata change on a
+judged PR costs no provider spend.
+
+**Two hook settings that fail confusingly.** Both were hit while wiring this up:
+
+| Setting | Wrong value | Symptom |
+|---|---|---|
+| `config.content_type` | `form` (GitHub's default) | Every delivery returns `415 Unsupported Media Type`. Worse, a form body is *not* the raw bytes you signed, so HMAC verification could never pass. |
+| `config.secret` | omitted on a later `PATCH .../config` | Silently rotates to empty; deliveries return `401 missing_signature`. Re-send `secret` in the same PATCH that updates `url`. |
+
+Check both after any hook edit:
+`GET /repos/<owner>/<repo>/hooks/<id>` must show `"content_type": "json"`, then
+`POST /repos/<owner>/<repo>/hooks/<id>/pings` must return a delivery with `200`.
 
 ---
 
