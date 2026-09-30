@@ -1,9 +1,10 @@
 import { BountyItem } from "@/types/bounty";
-import { BOUNTRA_ESCROW_ADDRESS, MOCK_USDT_ADDRESS } from "@/config/contracts";
+import { MOCK_USDT_ADDRESS } from "@/config/contracts";
 
 export const INITIAL_BOUNTIES: BountyItem[] = [
   {
     id: 0,
+    isMock: true,
     creator: "0x1a8f9B123c52A9D490b8B0F2849eF3e5Dcb76A12",
     token: MOCK_USDT_ADDRESS,
     tokenSymbol: "USDT",
@@ -22,6 +23,7 @@ export const INITIAL_BOUNTIES: BountyItem[] = [
   },
   {
     id: 1,
+    isMock: true,
     creator: "0x44E281F19bC8C5e0B3b1a2E3f295C1488c03D2A1",
     token: MOCK_USDT_ADDRESS,
     tokenSymbol: "USDT",
@@ -40,6 +42,7 @@ export const INITIAL_BOUNTIES: BountyItem[] = [
   },
   {
     id: 6,
+    isMock: true,
     creator: "0x1a8f9B123c52A9D490b8B0F2849eF3e5Dcb76A12",
     token: MOCK_USDT_ADDRESS,
     tokenSymbol: "USDT",
@@ -58,6 +61,7 @@ export const INITIAL_BOUNTIES: BountyItem[] = [
   },
   {
     id: 2,
+    isMock: true,
     creator: "0x98A1337C4295847F2a89C91B48A1054Ce3B14022",
     token: MOCK_USDT_ADDRESS,
     tokenSymbol: "USDT",
@@ -76,6 +80,7 @@ export const INITIAL_BOUNTIES: BountyItem[] = [
   },
   {
     id: 3,
+    isMock: true,
     creator: "0x1a8f9B123c52A9D490b8B0F2849eF3e5Dcb76A12",
     token: MOCK_USDT_ADDRESS,
     tokenSymbol: "USDT",
@@ -94,6 +99,7 @@ export const INITIAL_BOUNTIES: BountyItem[] = [
   },
   {
     id: 4,
+    isMock: true,
     creator: "0x7F2a4B12C91B48A1054Ce3B140220x1a8f9B123c",
     token: MOCK_USDT_ADDRESS,
     tokenSymbol: "USDT",
@@ -112,6 +118,7 @@ export const INITIAL_BOUNTIES: BountyItem[] = [
   },
   {
     id: 5,
+    isMock: true,
     creator: "0x3a9B123c52A9D490b8B0F2849eF3e5Dcb76A889",
     token: MOCK_USDT_ADDRESS,
     tokenSymbol: "USDT",

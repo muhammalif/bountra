@@ -23,8 +23,7 @@ export default function ExplorePage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedBountyForClaim, setSelectedBountyForClaim] = useState<BountyItem | null>(null);
 
-  // Merge on-chain bounties with mock data:
-  // On-chain bounties appear first with unique IDs, followed by mock bounties with offset IDs
+  // Keep demo rows visible while using offset IDs only for React key uniqueness.
   useEffect(() => {
     if (onChainBounties.length === 0) return;
 
@@ -34,7 +33,7 @@ export default function ExplorePage() {
       id: b.id, // 0, 1, 2, 3...
     }));
 
-    // Offset mock bounty IDs by 100 to ensure completely unique keys
+    // Offset mock bounty IDs to ensure completely unique keys.
     const formattedMock = INITIAL_BOUNTIES.map((b) => ({
       ...b,
       id: b.id + 100,
@@ -73,7 +72,9 @@ export default function ExplorePage() {
   }, [bounties, searchQuery, selectedStatus, sortBy]);
 
   const totalTvl = useMemo(() => {
-    return bounties.reduce((acc, curr) => acc + parseFloat(curr.amountFormatted), 0);
+    return bounties
+      .filter((bounty) => !bounty.isMock)
+      .reduce((acc, curr) => acc + parseFloat(curr.amountFormatted), 0);
   }, [bounties]);
 
   return (
@@ -90,7 +91,7 @@ export default function ExplorePage() {
               Explore Active Bounties
             </h1>
             <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm text-content-secondary max-w-2xl leading-relaxed">
-              Find open GitHub issues with funds locked on BNB Chain. Submit PRs, pass the 5-layer Bountra Agent automated audit, and claim your reward.
+              Browse on-chain bounties and clearly marked demo rows. Only on-chain entries have funds locked on BNB Chain.
             </p>
           </div>
 
@@ -115,20 +116,20 @@ export default function ExplorePage() {
               {totalTvl.toLocaleString()} USDT
             </div>
             <span className="text-[10px] font-mono text-content-secondary">
-              Locked on BSC Testnet Vault
+              On-chain bounties only
             </span>
           </div>
 
           <div className="p-3.5 sm:p-4 rounded-xl border border-surface-border bg-surface-secondary/60">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-mono uppercase text-content-muted">Total Bounties</span>
+              <span className="text-[10px] font-mono uppercase text-content-muted">Bounty Listings</span>
               <ShieldCheck className="h-4 w-4 text-status-success" />
             </div>
             <div className="font-mono text-lg sm:text-xl font-bold text-content-primary">
-              {bounties.length} Escrows
+              {bounties.length} Listings
             </div>
             <span className="text-[10px] font-mono text-content-secondary">
-              {bounties.filter((b) => b.status === "open").length} open for PR
+              {bounties.filter((b) => !b.isMock && b.status === "open").length} on-chain open for PR
             </span>
           </div>
 

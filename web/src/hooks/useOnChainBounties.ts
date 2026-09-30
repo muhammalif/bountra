@@ -142,6 +142,7 @@ export function useOnChainBounties() {
 
           results.push({
             id: i,
+            isMock: false,
             creator: data.creator,
             token: data.token,
             tokenSymbol: "USDT",

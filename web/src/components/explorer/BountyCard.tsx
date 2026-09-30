@@ -53,9 +53,20 @@ export function BountyCard({ bounty, onSelect }: BountyCardProps) {
     <div className="flex flex-col justify-between rounded-xl border border-surface-border bg-surface-secondary/70 p-5 backdrop-blur-sm transition-all hover:border-brand-primary/40 hover:bg-surface-secondary">
       <div>
         <div className="flex items-center justify-between gap-2 mb-3">
-          <span className="font-mono text-xs font-semibold text-content-secondary truncate max-w-[200px]">
-            {bounty.repo}#{bounty.issueNumber}
-          </span>
+          <div className="flex min-w-0 items-center gap-2">
+            {bounty.isMock && (
+              <span
+                aria-label="Demo data"
+                title="Demo data; not on-chain"
+                className="shrink-0 rounded border border-surface-border bg-surface-tertiary px-1.5 py-0.5 font-mono text-[9px] font-semibold text-content-muted"
+              >
+                DEMO
+              </span>
+            )}
+            <span className="font-mono text-xs font-semibold text-content-secondary truncate max-w-[200px]">
+              {bounty.repo}#{bounty.issueNumber}
+            </span>
+          </div>
           <span className={cn("px-2 py-0.5 rounded text-[10px] font-mono font-medium border shrink-0", badge.className)}>
             {badge.label}
           </span>

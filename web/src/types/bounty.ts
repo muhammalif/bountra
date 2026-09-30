@@ -2,6 +2,7 @@ export type BountyStatus = "open" | "in_review" | "ready_to_claim" | "claimed" |
 
 export interface BountyItem {
   id: number;
+  isMock: boolean;
   creator: string;
   token: string;
   tokenSymbol: string;

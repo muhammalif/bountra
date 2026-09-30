@@ -42,8 +42,9 @@ export function SponsorTab({ bounties, onCreateBounty, onRefresh }: SponsorTabPr
     }
   };
 
-  const totalDeposited = bounties.reduce((acc, curr) => acc + parseFloat(curr.amountFormatted), 0);
-  const activeCount = bounties.filter((b) => b.status === "open" || b.status === "in_review").length;
+  const onChainBounties = bounties.filter((bounty) => !bounty.isMock);
+  const totalDeposited = onChainBounties.reduce((acc, curr) => acc + parseFloat(curr.amountFormatted), 0);
+  const activeCount = onChainBounties.filter((b) => b.status === "open" || b.status === "in_review").length;
   const nowSec = Math.floor(Date.now() / 1000);
 
   return (
@@ -54,7 +55,7 @@ export function SponsorTab({ bounties, onCreateBounty, onRefresh }: SponsorTabPr
           <div className="mt-1 font-mono text-lg sm:text-xl font-bold text-brand-primary">
             {totalDeposited.toLocaleString()} USDT
           </div>
-          <span className="text-[10px] font-mono text-content-secondary">Across your escrows</span>
+          <span className="text-[10px] font-mono text-content-secondary">Across on-chain escrows</span>
         </div>
 
         <div className="p-3.5 sm:p-4 rounded-xl border border-surface-border bg-surface-secondary/70">
@@ -120,7 +121,14 @@ export function SponsorTab({ bounties, onCreateBounty, onRefresh }: SponsorTabPr
                 <div key={b.id} className="rounded-xl border border-surface-border bg-surface-secondary p-4 space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
-                      <span className="font-mono text-[10px] text-content-muted">#{b.id}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-[10px] text-content-muted">#{b.id}</span>
+                        {b.isMock && (
+                          <span className="rounded border border-surface-border bg-surface-tertiary px-1.5 py-0.5 font-mono text-[9px] font-semibold text-content-muted">
+                            DEMO
+                          </span>
+                        )}
+                      </div>
                       <div className="font-mono text-sm font-semibold text-content-primary truncate">
                         {b.title}
                       </div>
@@ -215,7 +223,14 @@ export function SponsorTab({ bounties, onCreateBounty, onRefresh }: SponsorTabPr
                     return (
                       <tr key={b.id} className="hover:bg-surface-tertiary/40 transition-colors">
                         <td className="py-3.5 px-4 font-semibold text-content-primary">
-                          #{b.id}
+                          <div className="flex items-center gap-2">
+                            <span>#{b.id}</span>
+                            {b.isMock && (
+                              <span className="rounded border border-surface-border bg-surface-tertiary px-1.5 py-0.5 font-mono text-[9px] font-semibold text-content-muted">
+                                DEMO
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="py-3.5 px-4">
                           <div className="font-semibold text-content-primary truncate max-w-xs">

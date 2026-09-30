@@ -54,7 +54,7 @@ export default function HomePage() {
                 Featured Bounty Escrows
               </h2>
               <p className="mt-1 text-xs text-content-secondary max-w-lg">
-                Explore real code bounties currently funded on BSC Testnet. Solve the issue, submit a PR, and claim your reward.
+                Explore on-chain bounties and clearly marked demo rows. Only on-chain entries are funded on BSC Testnet.
               </p>
             </div>
 

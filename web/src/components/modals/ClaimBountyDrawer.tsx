@@ -4,8 +4,9 @@ import { useState, useEffect, useMemo } from "react";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { usePrivy } from "@privy-io/react-auth";
 import { X, ExternalLink, ShieldCheck, CheckCircle2, Loader2, Sparkles, AlertCircle, Clock, Eye, GitPullRequest, ArrowRight } from "lucide-react";
+import { ContractFunctionRevertedError } from "viem";
 import { BountyItem } from "@/types/bounty";
-import { BOUNTRA_ESCROW_ADDRESS, BOUNTRA_ESCROW_ABI } from "@/config/contracts";
+import { BOUNTRA_ESCROW_ADDRESS, BOUNTRA_ESCROW_ABI, DEFAULT_CHAIN_ID } from "@/config/contracts";
 import { formatAddress } from "@/lib/utils";
 import { useClaimEligibility, useClaimAuthorization } from "@/hooks/useClaimAuthorization";
 import { TxHashChip } from "./TxHashChip";
@@ -19,6 +20,73 @@ interface ClaimBountyDrawerProps {
   mode?: "public" | "claim";
 }
 
+const CLAIM_ERROR_MESSAGES: Record<string, string> = {
+  InvalidAgentSigner: "The escrow agent signer is invalid.",
+  InvalidToken: "The bounty token is invalid.",
+  InvalidAmount: "The bounty amount is invalid.",
+  InvalidDeadline: "The bounty deadline is invalid.",
+  InvalidDeveloper: "The connected developer wallet is invalid.",
+  BountyNotFound: "This bounty does not exist on-chain.",
+  UnauthorizedSigner: "The agent signature does not match this bounty's claim details.",
+  SignatureAlreadyUsed: "This claim signature has already been used.",
+  BountyAlreadyClaimed: "This bounty has already been claimed.",
+  BountyAlreadyCancelled: "This bounty was cancelled and cannot be claimed.",
+  UnauthorizedCreator: "Only the bounty creator can perform this escrow action.",
+  DeadlineNotPassed: "The bounty deadline has not passed, so it cannot be cancelled.",
+  ERC20InsufficientBalance: "The escrow token balance is insufficient to pay this bounty.",
+  SafeERC20FailedOperation: "The escrow token transfer failed."
+};
+
+function getErrorText(error: unknown): string {
+  if (typeof error === "string") return error;
+  if (error instanceof Error) return error.message;
+  return "Unknown claim error";
+}
+
+function getRevertError(error: unknown): ContractFunctionRevertedError | null {
+  if (error instanceof ContractFunctionRevertedError) return error;
+  if (!(error instanceof Error)) return null;
+
+  const errorWithWalk = error as Error & {
+    walk?: (predicate: (candidate: unknown) => boolean) => Error | null;
+  };
+  const revertedError = errorWithWalk.walk?.(
+    (candidate) => candidate instanceof ContractFunctionRevertedError
+  );
+
+  return revertedError instanceof ContractFunctionRevertedError ? revertedError : null;
+}
+
+function getRevertName(error: unknown, revertedError: ContractFunctionRevertedError | null) {
+  const decodedName = revertedError?.data?.errorName;
+  if (decodedName) return decodedName;
+
+  const errorText = [getErrorText(error), revertedError?.reason, revertedError?.signature]
+    .filter(Boolean)
+    .join("\n");
+  return Object.keys(CLAIM_ERROR_MESSAGES).find((name) => errorText.includes(name));
+}
+
+function getRawReason(error: unknown, revertedError: ContractFunctionRevertedError | null): string {
+  const decodedError = revertedError?.data;
+  if (decodedError?.errorName) {
+    const args = Array.isArray(decodedError.args) ? decodedError.args.map(String).join(", ") : "";
+    return `${decodedError.errorName}(${args})`;
+  }
+  return revertedError?.reason || revertedError?.signature || revertedError?.raw || getErrorText(error);
+}
+
+function formatClaimError(error: unknown): string {
+  const revertedError = getRevertError(error);
+  const revertName = getRevertName(error, revertedError);
+  const errorText = getErrorText(error).toLowerCase();
+  const message = errorText.includes("user rejected") || errorText.includes("user denied")
+    ? "The wallet rejected the claim request."
+    : (revertName && CLAIM_ERROR_MESSAGES[revertName]) || "The claim transaction failed.";
+
+  return `${message}\nRaw reason: ${getRawReason(error, revertedError)}`;
+}
+
 export function ClaimBountyDrawer({
   bounty,
   isOpen,
@@ -26,7 +94,7 @@ export function ClaimBountyDrawer({
   onSuccess,
   mode = "public"
 }: ClaimBountyDrawerProps) {
-  const { address: wagmiAddress, isConnected } = useAccount();
+  const { address: wagmiAddress, chainId, isConnected } = useAccount();
   const { user, authenticated } = usePrivy();
   const address = wagmiAddress || (user?.wallet?.address as `0x${string}` | undefined);
   const isWalletActive = Boolean(isConnected || authenticated);
@@ -41,7 +109,7 @@ export function ClaimBountyDrawer({
   // THIS bounty and THIS developer. Deriving it from mock rows is what let a
   // bounty that does not exist on chain reach claimBounty().
   const { eligible } = useClaimEligibility(mode === "claim" ? address : undefined);
-  const { authorize, isLoading: isAuthorizing } = useClaimAuthorization();
+  const { authorize, isLoading: isAuthorizing, error: authorizationError } = useClaimAuthorization();
 
   const eligibleAudit = useMemo(
     () => (bounty ? eligible.find((e) => e.bountyId === bounty.id) : undefined),
@@ -63,7 +131,7 @@ export function ClaimBountyDrawer({
     setSignature("");
     setErrorMsg(null);
 
-    if (mode !== "claim" || !address || !eligibleAudit) return;
+    if (mode !== "claim" || bounty.isMock || !address || !eligibleAudit) return;
 
     let cancelled = false;
     (async () => {
@@ -87,13 +155,27 @@ export function ClaimBountyDrawer({
   const {
     writeContract: writeClaim,
     data: claimTxHash,
+    error: claimWriteError,
+    isError: isClaimWriteError,
     isPending: isClaimPending,
     reset: resetClaim
   } = useWriteContract();
 
-  const { isLoading: isClaimConfirming, isSuccess: isClaimSuccess } = useWaitForTransactionReceipt({
-    hash: claimTxHash
-  });
+  const {
+    error: claimReceiptError,
+    isError: isClaimReceiptError,
+    isLoading: isClaimConfirming,
+    isSuccess: isClaimSuccess
+  } = useWaitForTransactionReceipt({ hash: claimTxHash });
+
+  const transactionError = isClaimReceiptError && claimReceiptError
+    ? claimReceiptError
+    : isClaimWriteError && claimWriteError
+    ? claimWriteError
+    : null;
+  const visibleErrorMsg = errorMsg
+    ?? (transactionError ? formatClaimError(transactionError) : null)
+    ?? (bounty?.isMock ? null : authorizationError);
 
   useEffect(() => {
     if (isClaimSuccess && claimTxHash && bounty) {
@@ -129,8 +211,16 @@ export function ClaimBountyDrawer({
 
   const handleClaim = () => {
     setErrorMsg(null);
+    if (bounty.isMock) {
+      setErrorMsg("This bounty is demo data and does not exist on-chain.");
+      return;
+    }
     if (!address) {
       setErrorMsg("Please connect your developer wallet to claim.");
+      return;
+    }
+    if (chainId !== DEFAULT_CHAIN_ID) {
+      setErrorMsg(`Switch your wallet to the configured Bountra network (chain ID ${DEFAULT_CHAIN_ID}) before claiming.`);
       return;
     }
     if (!prUrl.startsWith("https://github.com/")) {
@@ -154,13 +244,13 @@ export function ClaimBountyDrawer({
         args: [
           BigInt(bounty.id),
           address,
-          commitHash.trim(),
           prUrl.trim(),
+          commitHash.trim(),
           signature.trim() as `0x${string}`
         ]
       });
-    } catch (err: any) {
-      setErrorMsg(err.message || "Failed to trigger claim transaction");
+    } catch (err: unknown) {
+      setErrorMsg(formatClaimError(err));
     }
   };
 
@@ -204,6 +294,11 @@ export function ClaimBountyDrawer({
       </div>
       {bounty.description && (
         <p className="text-xs text-content-secondary leading-relaxed">{bounty.description}</p>
+      )}
+      {bounty.isMock && (
+        <div className="rounded-lg border border-surface-border bg-surface-tertiary/60 p-3 font-mono text-[11px] text-content-muted">
+          <span className="font-semibold">DEMO</span> — This bounty is demo data and does not exist on-chain.
+        </div>
       )}
     </div>
   );
@@ -619,6 +714,15 @@ export function ClaimBountyDrawer({
                   <span className="font-mono text-[10px] text-content-muted uppercase">
                     Bounty ID #{bounty.id}
                   </span>
+                  {bounty.isMock && (
+                    <span
+                      aria-label="Demo data"
+                      title="Demo data; not on-chain"
+                      className="rounded border border-surface-border bg-surface-tertiary px-1.5 py-0.5 font-mono text-[9px] font-semibold text-content-muted"
+                    >
+                      DEMO
+                    </span>
+                  )}
                   {renderStatusBadge()}
                 </div>
                 <h2 className="text-base font-bold text-content-primary truncate max-w-[260px]">
@@ -633,13 +737,13 @@ export function ClaimBountyDrawer({
               </button>
             </div>
 
-            {errorMsg && (
+            {visibleErrorMsg && (
               <div
                 role="alert"
-                className="mb-4 p-3 rounded-lg border border-status-danger/30 bg-red-950/20 text-xs text-status-danger font-mono flex items-start gap-2"
+                className="mb-4 p-3 rounded-lg border border-status-danger/30 bg-red-950/20 text-xs text-status-danger font-mono flex items-start gap-2 whitespace-pre-wrap"
               >
                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                <span>{errorMsg}</span>
+                <span>{visibleErrorMsg}</span>
               </div>
             )}
 
@@ -686,7 +790,13 @@ export function ClaimBountyDrawer({
 
               <button
                 onClick={handleClaim}
-                disabled={!isWalletActive || isClaimPending || isClaimConfirming || bounty.claimed || isAuthorizing || !signature}
+                disabled={
+                  isClaimPending
+                  || isClaimConfirming
+                  || bounty.claimed
+                  || isAuthorizing
+                  || (!bounty.isMock && (!isWalletActive || !signature))
+                }
                 className="w-full flex items-center justify-center gap-2 rounded-lg bg-brand-primary text-black font-semibold text-xs py-2.5 hover:bg-brand-hover transition-all active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
               >
                 {isClaimPending || isClaimConfirming ? (
