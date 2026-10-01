@@ -33,7 +33,12 @@ export interface PrData {
   ciDetails: Record<string, unknown>;
 }
 
-export type CiEvidence = "check-runs" | "combined-status" | "none" | "unavailable";
+export type CiEvidence =
+  | "check-runs"
+  | "combined-status"
+  | "ci-not-reported"
+  | "no-ci-configured"
+  | "unavailable";
 
 export interface CiData {
   ciPassed: boolean;
@@ -141,16 +146,20 @@ export class GithubAuditClient {
       const totalRuns = checkRuns.data.total_count;
 
       if (totalRuns > 0) {
+        const incompleteRuns = checkRuns.data.check_runs.filter((c) => c.status !== "completed");
         const successfulRuns = checkRuns.data.check_runs.filter(
           (c) => c.status === "completed" && c.conclusion === "success"
         ).length;
 
         return {
-          ciPassed: successfulRuns === totalRuns,
+          ciPassed: incompleteRuns.length === 0 && successfulRuns === totalRuns,
           ciDetails: {
             evidence: "check-runs",
             total: totalRuns,
             successful: successfulRuns,
+            ...(incompleteRuns.length > 0
+              ? { incomplete: incompleteRuns.length, reason: "ci-not-reported" }
+              : {}),
             checkRuns: checkRuns.data.check_runs.map((c) => ({
               name: c.name,
               status: c.status,
@@ -182,10 +191,14 @@ export class GithubAuditClient {
           };
         }
 
+        const evidence: CiEvidence = statuses.data.state === "pending" ? "ci-not-reported" : "no-ci-configured";
+
         return {
-          ciPassed: true,
+          ciPassed: false,
           ciDetails: {
-            evidence: "none",
+            evidence,
+            reason: evidence === "ci-not-reported" ? "CI has not reported for this commit" : "No CI is configured",
+            state: statuses.data.state,
             total_count: 0
           }
         };

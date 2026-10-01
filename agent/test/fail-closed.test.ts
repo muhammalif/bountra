@@ -182,15 +182,77 @@ describe("fail-closed evidence gates", () => {
     assert.equal(result.ciDetails.evidence, "unavailable");
   });
 
-  it("passes when both CI evidence sources are genuinely empty", async () => {
+  it("rejects a commit when both CI evidence sources are empty", async () => {
     const client = ciOnlyClient(
       async () => ({ data: { total_count: 0, check_runs: [] } }),
-      async () => ({ data: { state: "pending", total_count: 0 } })
+      async () => ({ data: { state: "pending", statuses: [], total_count: 0 } })
+    );
+    const result = await client.fetchCiStatus("bountra", "demo", HEAD_SHA);
+
+    assert.equal(result.ciPassed, false);
+  });
+
+  it("explains why an empty CI result was rejected", async () => {
+    const client = ciOnlyClient(
+      async () => ({ data: { total_count: 0, check_runs: [] } }),
+      async () => ({ data: { state: "pending", statuses: [], total_count: 0 } })
+    );
+    const result = await client.fetchCiStatus("bountra", "demo", HEAD_SHA);
+
+    assert.equal(result.ciDetails.evidence, "ci-not-reported");
+    assert.equal(result.ciDetails.reason, "CI has not reported for this commit");
+  });
+
+  it("does not pass an in-flight check run", async () => {
+    const client = ciOnlyClient(
+      async () => ({
+        data: {
+          total_count: 1,
+          check_runs: [{ name: "test", status: "queued", conclusion: null }]
+        }
+      }),
+      async () => ({ data: { state: "pending", statuses: [], total_count: 0 } })
+    );
+    const result = await client.fetchCiStatus("bountra", "demo", HEAD_SHA);
+
+    assert.equal(result.ciPassed, false);
+    assert.equal(result.ciDetails.incomplete, 1);
+    assert.equal(result.ciDetails.reason, "ci-not-reported");
+  });
+
+  it("passes when every check run completed successfully", async () => {
+    const client = ciOnlyClient(
+      async () => ({
+        data: {
+          total_count: 1,
+          check_runs: [{ name: "test", status: "completed", conclusion: "success" }]
+        }
+      }),
+      async () => ({ data: { state: "pending", statuses: [], total_count: 0 } })
     );
     const result = await client.fetchCiStatus("bountra", "demo", HEAD_SHA);
 
     assert.equal(result.ciPassed, true);
-    assert.equal(result.ciDetails.evidence, "none");
+    assert.equal(result.ciDetails.evidence, "check-runs");
+  });
+
+  it("fails when any completed check run failed", async () => {
+    const client = ciOnlyClient(
+      async () => ({
+        data: {
+          total_count: 2,
+          check_runs: [
+            { name: "test", status: "completed", conclusion: "success" },
+            { name: "lint", status: "completed", conclusion: "failure" }
+          ]
+        }
+      }),
+      async () => ({ data: { state: "pending", statuses: [], total_count: 0 } })
+    );
+    const result = await client.fetchCiStatus("bountra", "demo", HEAD_SHA);
+
+    assert.equal(result.ciPassed, false);
+    assert.equal(result.ciDetails.successful, 1);
   });
 
   it("leaves a failed GitHub fetch retryable for redelivery", async () => {
