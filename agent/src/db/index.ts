@@ -62,6 +62,8 @@ export function createDatabaseConnection(dbPath: string = DEFAULT_DB_PATH): { sq
 
     CREATE INDEX IF NOT EXISTS idx_audit_logs_bounty_id ON audit_logs(bounty_id);
     CREATE INDEX IF NOT EXISTS idx_audit_logs_status ON audit_logs(status);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_audit_logs_bounty_commit_hash
+      ON audit_logs(bounty_id, commit_hash);
 
     CREATE TABLE IF NOT EXISTS webhook_events (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -134,11 +136,36 @@ export async function updateBountyStatus(bountyId: number, status: string, dbIns
 export async function createAuditLog(data: NewAuditLog, dbInstance = db) {
   // Addresses arrive from clients in checksummed or lowercase form. Normalize on
   // write so lookups (findReusableAudit) match regardless of the caller's casing.
-  return dbInstance
-    .insert(schema.auditLogs)
-    .values({ ...data, developer: data.developer.toLowerCase() })
-    .returning()
-    .get();
+  try {
+    return dbInstance
+      .insert(schema.auditLogs)
+      .values({ ...data, developer: data.developer.toLowerCase() })
+      .returning()
+      .get();
+  } catch (error: unknown) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === "SQLITE_CONSTRAINT_UNIQUE"
+    ) {
+      const existing = dbInstance
+        .select()
+        .from(schema.auditLogs)
+        .where(
+          and(
+            eq(schema.auditLogs.bountyId, data.bountyId),
+            eq(schema.auditLogs.commitHash, data.commitHash)
+          )
+        )
+        .orderBy(desc(schema.auditLogs.id))
+        .get();
+
+      if (existing) return existing;
+    }
+
+    throw error;
+  }
 }
 
 export async function getAuditLogByBountyId(bountyId: number, dbInstance = db) {

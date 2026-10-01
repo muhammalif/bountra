@@ -55,8 +55,16 @@ describe("Developer claim eligibility", () => {
     const { db, sqlite } = createDatabaseConnection(":memory:");
     try {
       await seedBounty(db, 101);
-      await seedAudit(db, { bountyId: 101, signature: "0xolder-signature" });
-      await seedAudit(db, { bountyId: 101, signature: "0xnewer-signature" });
+      await seedAudit(db, {
+        bountyId: 101,
+        commitHash: "b".repeat(40),
+        signature: "0xolder-signature"
+      });
+      await seedAudit(db, {
+        bountyId: 101,
+        commitHash: "c".repeat(40),
+        signature: "0xnewer-signature"
+      });
 
       const rows = await listPassedAuditsByDeveloper(DEVELOPER, db);
 
@@ -72,8 +80,16 @@ describe("Developer claim eligibility", () => {
     try {
       await seedBounty(db, 202);
       await seedBounty(db, 101);
-      await seedAudit(db, { bountyId: 202, signature: "0x202-a" });
-      await seedAudit(db, { bountyId: 202, signature: "0x202-b" });
+      await seedAudit(db, {
+        bountyId: 202,
+        commitHash: "d".repeat(40),
+        signature: "0x202-a"
+      });
+      await seedAudit(db, {
+        bountyId: 202,
+        commitHash: "e".repeat(40),
+        signature: "0x202-b"
+      });
       await seedAudit(db, { bountyId: 101, signature: "0x101" });
 
       const rows = await listPassedAuditsByDeveloper(DEVELOPER, db);
@@ -89,8 +105,12 @@ describe("Developer claim eligibility", () => {
     const { db, sqlite } = createDatabaseConnection(":memory:");
     try {
       await seedBounty(db, 303);
-      const signed = await seedAudit(db, { bountyId: 303, signature: "0xusable-signature" });
-      await seedAudit(db, { bountyId: 303, signature: null });
+      const signed = await seedAudit(db, {
+        bountyId: 303,
+        commitHash: "f".repeat(40),
+        signature: "0xusable-signature"
+      });
+      await seedAudit(db, { bountyId: 303, commitHash: "0".repeat(40), signature: null });
 
       const rows = await listPassedAuditsByDeveloper(DEVELOPER, db);
 
@@ -106,9 +126,23 @@ describe("Developer claim eligibility", () => {
     const { db, sqlite } = createDatabaseConnection(":memory:");
     try {
       await seedBounty(db, 404);
-      await seedAudit(db, { bountyId: 404, signature: "0xpassed" });
-      await seedAudit(db, { bountyId: 404, status: "failed", signature: "0xfailed" });
-      await seedAudit(db, { bountyId: 404, status: "error", signature: "0xerror" });
+      await seedAudit(db, {
+        bountyId: 404,
+        commitHash: "1".repeat(40),
+        signature: "0xpassed"
+      });
+      await seedAudit(db, {
+        bountyId: 404,
+        commitHash: "2".repeat(40),
+        status: "failed",
+        signature: "0xfailed"
+      });
+      await seedAudit(db, {
+        bountyId: 404,
+        commitHash: "3".repeat(40),
+        status: "error",
+        signature: "0xerror"
+      });
 
       const rows = await listPassedAuditsByDeveloper(DEVELOPER, db);
 

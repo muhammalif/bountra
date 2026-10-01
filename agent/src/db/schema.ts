@@ -47,7 +47,8 @@ export const auditLogs = sqliteTable(
   },
   (table) => [
     index("idx_audit_logs_bounty_id").on(table.bountyId),
-    index("idx_audit_logs_status").on(table.status)
+    index("idx_audit_logs_status").on(table.status),
+    uniqueIndex("idx_audit_logs_bounty_commit_hash").on(table.bountyId, table.commitHash)
   ]
 );
 

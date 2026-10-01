@@ -53,14 +53,19 @@ async function seedBounty(app: ReturnType<typeof buildServer>, bountyId: number)
   assert.equal(res.statusCode, 201, `bounty seed failed: ${res.body}`);
 }
 
-async function audit(app: ReturnType<typeof buildServer>, bountyId: number, diff: string) {
+async function audit(
+  app: ReturnType<typeof buildServer>,
+  bountyId: number,
+  diff: string,
+  commitHash = "b".repeat(40)
+) {
   const res = await app.inject({
     method: "POST",
     url: "/api/audit/evaluate",
     payload: {
       bountyId,
       prUrl: `https://github.com/bountra/core-contracts/pull/${bountyId}-${SCOPE}`,
-      commitHash: "b".repeat(40),
+      commitHash,
       devWallet: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
       diff
     }
@@ -103,8 +108,13 @@ describe("GET /api/bounties/statuses", () => {
   });
 
   it("reports the newest audit when a bounty is re-audited", async () => {
-    // A retry after a rejection must surface the new verdict, not the stale one.
-    const retried = await audit(app, FAILED_ID, "diff --git a/src/y.js b/src/y.js\n+const fixed = true;");
+    // A new commit after a rejection must surface the new verdict, not the stale one.
+    const retried = await audit(
+      app,
+      FAILED_ID,
+      "diff --git a/src/y.js b/src/y.js\n+const fixed = true;",
+      "c".repeat(40)
+    );
 
     assert.equal(retried.verdict, "passed");
 
