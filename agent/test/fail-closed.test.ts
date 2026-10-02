@@ -62,7 +62,7 @@ function ciOnlyClient(checkRuns: () => Promise<unknown>, statuses: () => Promise
     checks: { listForRef: checkRuns },
     repos: { getCombinedStatusForRef: statuses }
   } as unknown as Octokit;
-  return new GithubAuditClient("test-token", octokit);
+  return new GithubAuditClient("test-token", octokit, { retryDelayMs: 0 });
 }
 
 function diffFailureClient() {
@@ -99,7 +99,7 @@ function diffFailureClient() {
     }
   } as unknown as Octokit;
 
-  return new GithubAuditClient("test-token", octokit);
+  return new GithubAuditClient("test-token", octokit, { retryDelayMs: 0 });
 }
 
 function retryableFetchClient() {
@@ -109,7 +109,9 @@ function retryableFetchClient() {
       get: async (params: { mediaType?: { format: string } }) => {
         if (params.mediaType) return { data: "+const fetched = true;" };
         pullRequestsFetched += 1;
-        if (pullRequestsFetched === 1) throw new Error("GitHub 500");
+        if (pullRequestsFetched === 1) {
+          throw Object.assign(new Error("GitHub 404"), { status: 404 });
+        }
         return {
           data: {
             head: { sha: HEAD_SHA },
@@ -140,7 +142,7 @@ function retryableFetchClient() {
   } as unknown as Octokit;
 
   return {
-    client: new GithubAuditClient("test-token", octokit),
+    client: new GithubAuditClient("test-token", octokit, { retryDelayMs: 0 }),
     getPullRequestsFetched: () => pullRequestsFetched
   };
 }

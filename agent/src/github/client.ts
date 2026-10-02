@@ -1,6 +1,73 @@
 import { Octokit } from "@octokit/rest";
 import type { ChangedFile } from "../evaluator/security.js";
 
+const REQUEST_TIMEOUT_MS = 10_000;
+const MAX_ATTEMPTS = 2;
+const RETRY_DELAY_MS = 2_000;
+
+export interface GithubAuditClientOptions {
+  requestTimeoutMs?: number;
+  retryDelayMs?: number;
+}
+
+type GithubRequest<T> = (signal: AbortSignal) => Promise<T>;
+
+function createTimeoutFetch(timeoutMs: number) {
+  return async (...args: Parameters<typeof fetch>): Promise<Awaited<ReturnType<typeof fetch>>> => {
+    const [input, init] = args;
+    const controller = new AbortController();
+    const sourceSignal = init?.signal;
+    const abort = () => controller.abort();
+
+    if (sourceSignal?.aborted) {
+      controller.abort();
+    } else {
+      sourceSignal?.addEventListener("abort", abort, { once: true });
+    }
+
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(input, { ...init, signal: controller.signal });
+    } finally {
+      clearTimeout(timer);
+      sourceSignal?.removeEventListener("abort", abort);
+    }
+  };
+}
+
+async function withTimeout<T>(
+  operation: GithubRequest<T>,
+  timeoutMs: number,
+  label: string
+): Promise<T> {
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+
+  try {
+    return await Promise.race([
+      operation(controller.signal),
+      new Promise<never>((_resolve, reject) => {
+        timer = setTimeout(() => {
+          controller.abort();
+          reject(new Error(`${label} timed out after ${timeoutMs}ms`));
+        }, timeoutMs);
+      })
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+    controller.abort();
+  }
+}
+
+function isRetryable(error: unknown): boolean {
+  const status = (error as { status?: number } | null | undefined)?.status;
+  return status !== 400 && status !== 403 && status !== 404;
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export interface ParsedGithubUrl {
   owner: string;
   repo: string;
@@ -55,17 +122,42 @@ export interface IssueData {
 
 export class GithubAuditClient {
   private octokit: Octokit;
+  private readonly requestTimeoutMs: number;
+  private readonly retryDelayMs: number;
 
-  constructor(token?: string, octokit?: Octokit) {
-    this.octokit = octokit || new Octokit({ auth: token || process.env.GITHUB_TOKEN });
+  constructor(token?: string, octokit?: Octokit, options: GithubAuditClientOptions = {}) {
+    this.requestTimeoutMs = options.requestTimeoutMs ?? REQUEST_TIMEOUT_MS;
+    this.retryDelayMs = options.retryDelayMs ?? RETRY_DELAY_MS;
+    this.octokit =
+      octokit ||
+      new Octokit({
+        auth: token || process.env.GITHUB_TOKEN,
+        request: { fetch: createTimeoutFetch(this.requestTimeoutMs) }
+      });
+  }
+
+  private async request<T>(label: string, operation: GithubRequest<T>): Promise<T> {
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      try {
+        return await withTimeout(operation, this.requestTimeoutMs, `GitHub ${label}`);
+      } catch (error) {
+        if (!isRetryable(error) || attempt === MAX_ATTEMPTS) throw error;
+        await delay(this.retryDelayMs);
+      }
+    }
+
+    throw new Error(`GitHub ${label} failed after ${MAX_ATTEMPTS} attempts`);
   }
 
   async fetchIssue(owner: string, repo: string, issueNumber: number): Promise<IssueData> {
-    const res = await this.octokit.issues.get({
-      owner,
-      repo,
-      issue_number: issueNumber
-    });
+    const res = await this.request("issues.get", (signal) =>
+      this.octokit.issues.get({
+        owner,
+        repo,
+        issue_number: issueNumber,
+        request: { signal }
+      })
+    );
     return {
       owner,
       repo,
@@ -76,17 +168,23 @@ export class GithubAuditClient {
   }
 
   async fetchPullRequest(owner: string, repo: string, prNumber: number): Promise<PrData> {
-    const prRes = await this.octokit.pulls.get({
-      owner,
-      repo,
-      pull_number: prNumber
-    });
+    const prRes = await this.request("pulls.get", (signal) =>
+      this.octokit.pulls.get({
+        owner,
+        repo,
+        pull_number: prNumber,
+        request: { signal }
+      })
+    );
 
-    const filesRes = await this.octokit.pulls.listFiles({
-      owner,
-      repo,
-      pull_number: prNumber
-    });
+    const filesRes = await this.request("pulls.listFiles", (signal) =>
+      this.octokit.pulls.listFiles({
+        owner,
+        repo,
+        pull_number: prNumber,
+        request: { signal }
+      })
+    );
 
     const changedFiles: ChangedFile[] = filesRes.data.map((f) => ({
       filename: f.filename,
@@ -97,12 +195,15 @@ export class GithubAuditClient {
     let diff = "";
     let diffAvailable = false;
     try {
-      const diffRes = await this.octokit.pulls.get({
-        owner,
-        repo,
-        pull_number: prNumber,
-        mediaType: { format: "diff" }
-      });
+      const diffRes = await this.request("pulls.get diff", (signal) =>
+        this.octokit.pulls.get({
+          owner,
+          repo,
+          pull_number: prNumber,
+          mediaType: { format: "diff" },
+          request: { signal }
+        })
+      );
       if (typeof diffRes.data === "string") {
         diff = diffRes.data;
         diffAvailable = true;
@@ -142,7 +243,9 @@ export class GithubAuditClient {
     let checkRunsError: string | undefined;
 
     try {
-      const checkRuns = await this.octokit.checks.listForRef({ owner, repo, ref });
+      const checkRuns = await this.request("checks.listForRef", (signal) =>
+        this.octokit.checks.listForRef({ owner, repo, ref, request: { signal } })
+      );
       const totalRuns = checkRuns.data.total_count;
 
       if (totalRuns > 0) {
@@ -174,7 +277,9 @@ export class GithubAuditClient {
     }
 
     try {
-      const statuses = await this.octokit.repos.getCombinedStatusForRef({ owner, repo, ref });
+      const statuses = await this.request("repos.getCombinedStatusForRef", (signal) =>
+        this.octokit.repos.getCombinedStatusForRef({ owner, repo, ref, request: { signal } })
+      );
       const totalStatuses = statuses.data.total_count;
 
       if (totalStatuses === 0) {
@@ -235,11 +340,14 @@ export class GithubAuditClient {
   }
 
   async postPrComment(owner: string, repo: string, prNumber: number, comment: string): Promise<void> {
-    await this.octokit.issues.createComment({
-      owner,
-      repo,
-      issue_number: prNumber,
-      body: comment
-    });
+    await this.request("issues.createComment", (signal) =>
+      this.octokit.issues.createComment({
+        owner,
+        repo,
+        issue_number: prNumber,
+        body: comment,
+        request: { signal }
+      })
+    );
   }
 }
