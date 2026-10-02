@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from "wagmi";
 import { usePrivy } from "@privy-io/react-auth";
-import { parseUnits, maxUint256 } from "viem";
+import { maxUint256, parseEventLogs, parseUnits } from "viem";
 import { X, AlertCircle, CheckCircle2, Loader2, ExternalLink, ShieldAlert } from "lucide-react";
 import { BOUNTRA_ESCROW_ADDRESS, BOUNTRA_ESCROW_ABI, ERC20_ABI, MOCK_USDT_ADDRESS } from "@/config/contracts";
 import { formatBscScanUrl } from "@/lib/utils";
@@ -13,6 +13,43 @@ interface CreateBountyModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+}
+
+interface AgentBountyRegistration {
+  bountyId: number;
+  issueUrl: string;
+  repoOwner: string;
+  repoName: string;
+  issueNum: number;
+  creator: string;
+  token: string;
+  amount: string;
+  deadline: number;
+}
+
+const REGISTRATION_RETRY_DELAYS_MS = [250, 500] as const;
+
+async function registerBountyWithAgent(payload: AgentBountyRegistration): Promise<boolean> {
+  for (let attempt = 0; attempt <= REGISTRATION_RETRY_DELAYS_MS.length; attempt += 1) {
+    try {
+      const response = await fetch("/api/agent/bounties", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok || response.status === 409) return true;
+      if (response.status < 500) return false;
+    } catch {
+      if (attempt === REGISTRATION_RETRY_DELAYS_MS.length) return false;
+    }
+
+    if (attempt < REGISTRATION_RETRY_DELAYS_MS.length) {
+      await new Promise((resolve) => setTimeout(resolve, REGISTRATION_RETRY_DELAYS_MS[attempt]));
+    }
+  }
+
+  return false;
 }
 
 export function CreateBountyModal({ isOpen, onClose, onSuccess }: CreateBountyModalProps) {
@@ -26,6 +63,8 @@ export function CreateBountyModal({ isOpen, onClose, onSuccess }: CreateBountyMo
   const [durationDays, setDurationDays] = useState("14");
   const [customDays, setCustomDays] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const registrationKeyRef = useRef<string | null>(null);
+  const registrationRunRef = useRef(0);
 
   const amountParsed = parseUnits(amount || "0", 18);
 
@@ -59,7 +98,11 @@ export function CreateBountyModal({ isOpen, onClose, onSuccess }: CreateBountyMo
     reset: resetCreate
   } = useWriteContract();
 
-  const { isLoading: isCreateConfirming, isSuccess: isCreateSuccess } = useWaitForTransactionReceipt({
+  const {
+    data: createReceipt,
+    isLoading: isCreateConfirming,
+    isSuccess: isCreateSuccess
+  } = useWaitForTransactionReceipt({
     hash: createTxHash
   });
 
@@ -82,12 +125,103 @@ export function CreateBountyModal({ isOpen, onClose, onSuccess }: CreateBountyMo
     }
   }, [isApproveSuccess, refetchAllowance]);
 
-  // When create succeeds, trigger parent callback
   useEffect(() => {
-    if (isCreateSuccess && onSuccess) {
-      onSuccess();
-    }
-  }, [isCreateSuccess, onSuccess]);
+    if (!isOpen || !isCreateSuccess || !createReceipt || !createTxHash) return;
+    if (registrationKeyRef.current === createTxHash) return;
+
+    registrationKeyRef.current = createTxHash;
+    registrationRunRef.current += 1;
+    const registrationRun = registrationRunRef.current;
+
+    const setRegistrationWarning = (bountyId?: string) => {
+      if (registrationRunRef.current !== registrationRun) return;
+      setErrorMsg(
+        bountyId
+          ? `Bounty #${bountyId} was created on-chain, but the agent could not register it. Ask a maintainer to register bounty #${bountyId}.`
+          : `Bounty was created on-chain, but its BountyCreated event was not found in the receipt. Ask a maintainer to inspect transaction ${createTxHash}.`
+      );
+    };
+
+    const registerBounty = async () => {
+      let createdLog;
+      try {
+        [createdLog] = parseEventLogs({
+          abi: BOUNTRA_ESCROW_ABI,
+          eventName: "BountyCreated",
+          logs: createReceipt.logs.filter(
+            (log) => log.address.toLowerCase() === BOUNTRA_ESCROW_ADDRESS.toLowerCase()
+          )
+        });
+      } catch {
+        setRegistrationWarning();
+        return;
+      }
+
+      if (!createdLog?.args) {
+        setRegistrationWarning();
+        return;
+      }
+
+      const {
+        bountyId: bountyIdValue,
+        creator,
+        token,
+        amount: amountValue,
+        issueUrl: issueUrlValue,
+        deadline: deadlineValue
+      } = createdLog.args;
+      const bountyIdLabel = bountyIdValue?.toString();
+
+      if (
+        bountyIdValue === undefined ||
+        creator === undefined ||
+        token === undefined ||
+        amountValue === undefined ||
+        issueUrlValue === undefined ||
+        deadlineValue === undefined
+      ) {
+        setRegistrationWarning(bountyIdLabel);
+        return;
+      }
+
+      const bountyId = Number(bountyIdValue);
+      const deadline = Number(deadlineValue);
+      const issueMatch = issueUrlValue.match(/github\.com\/([^\/]+)\/([^\/]+)\/(?:issues|pull)\/(\d+)/i);
+      const issueNum = issueMatch ? Number(issueMatch[3]) : NaN;
+
+      if (
+        !Number.isSafeInteger(bountyId) ||
+        bountyId < 0 ||
+        !issueMatch ||
+        !Number.isSafeInteger(issueNum) ||
+        !Number.isSafeInteger(deadline)
+      ) {
+        setRegistrationWarning(bountyIdLabel);
+        return;
+      }
+
+      const registered = await registerBountyWithAgent({
+        bountyId,
+        issueUrl: issueUrlValue,
+        repoOwner: issueMatch[1],
+        repoName: issueMatch[2],
+        issueNum,
+        creator,
+        token,
+        amount: amountValue.toString(),
+        deadline
+      });
+
+      if (registrationRunRef.current !== registrationRun || !registered) {
+        setRegistrationWarning(bountyIdLabel);
+        return;
+      }
+
+      onSuccess?.();
+    };
+
+    void registerBounty();
+  }, [createReceipt, createTxHash, isCreateSuccess, isOpen, onSuccess]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -161,6 +295,8 @@ export function CreateBountyModal({ isOpen, onClose, onSuccess }: CreateBountyMo
     setDurationDays("14");
     setCustomDays("");
     setErrorMsg(null);
+    registrationKeyRef.current = null;
+    registrationRunRef.current += 1;
     onClose();
   };
 
@@ -198,6 +334,12 @@ export function CreateBountyModal({ isOpen, onClose, onSuccess }: CreateBountyMo
             <p className="text-xs text-content-secondary max-w-sm mb-4">
               Your bounty is now live on BNB Smart Chain Testnet. Developers can submit PRs to start autonomous AI auditing.
             </p>
+            {errorMsg && (
+              <div className="w-full mb-4 p-3 rounded-lg border border-status-warning/30 bg-amber-950/20 text-xs text-amber-300 font-mono flex items-start gap-2 text-left">
+                <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
             {createTxHash && (
               <a
                 href={formatBscScanUrl("tx", createTxHash)}
