@@ -34,6 +34,8 @@ export const auditLogs = sqliteTable(
     prUrl: text("pr_url").notNull(),
     commitHash: text("commit_hash").notNull(),
     developer: text("developer").notNull(),
+    contractAddress: text("contract_address"),
+    chainId: integer("chain_id"),
     ciStatus: text("ci_status"), // 'passed' | 'failed'
     ciDetail: text("ci_detail"), // JSON string
     integrityOk: integer("integrity_ok"), // 0 | 1

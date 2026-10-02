@@ -8,6 +8,27 @@ import type { AuditLog, NewBounty, NewAuditLog, NewWebhookEvent } from "./schema
 
 const DEFAULT_DB_PATH = process.env.DATABASE_PATH || "./data/bountra.db";
 
+interface SqliteColumnInfo {
+  name: string;
+}
+
+function migrateAuditLogProvenance(sqlite: InstanceType<typeof Database>) {
+  const existingColumns = new Set(
+    (sqlite.prepare("PRAGMA table_info(audit_logs)").all() as SqliteColumnInfo[]).map(
+      (column) => column.name
+    )
+  );
+
+  sqlite.transaction(() => {
+    if (!existingColumns.has("contract_address")) {
+      sqlite.exec("ALTER TABLE audit_logs ADD COLUMN contract_address TEXT");
+    }
+    if (!existingColumns.has("chain_id")) {
+      sqlite.exec("ALTER TABLE audit_logs ADD COLUMN chain_id INTEGER");
+    }
+  })();
+}
+
 export function createDatabaseConnection(dbPath: string = DEFAULT_DB_PATH): { sqlite: InstanceType<typeof Database>; db: ReturnType<typeof drizzle> } {
   if (dbPath !== ":memory:") {
     const dir = path.dirname(dbPath);
@@ -48,6 +69,8 @@ export function createDatabaseConnection(dbPath: string = DEFAULT_DB_PATH): { sq
       pr_url TEXT NOT NULL,
       commit_hash TEXT NOT NULL,
       developer TEXT NOT NULL,
+      contract_address TEXT,
+      chain_id INTEGER,
       ci_status TEXT,
       ci_detail TEXT,
       integrity_ok INTEGER,
@@ -80,6 +103,8 @@ export function createDatabaseConnection(dbPath: string = DEFAULT_DB_PATH): { sq
 
     CREATE UNIQUE INDEX IF NOT EXISTS idx_webhook_payload_hash ON webhook_events(payload_hash);
   `);
+
+  migrateAuditLogProvenance(sqlite);
 
   const db = drizzle(sqlite, { schema });
   return { sqlite, db };
@@ -135,11 +160,15 @@ export async function updateBountyStatus(bountyId: number, status: string, dbIns
 
 export async function createAuditLog(data: NewAuditLog, dbInstance = db) {
   // Addresses arrive from clients in checksummed or lowercase form. Normalize on
-  // write so lookups (findReusableAudit) match regardless of the caller's casing.
+  // write so lookups match regardless of the caller's casing.
   try {
     return dbInstance
       .insert(schema.auditLogs)
-      .values({ ...data, developer: data.developer.toLowerCase() })
+      .values({
+        ...data,
+        developer: data.developer.toLowerCase(),
+        contractAddress: data.contractAddress?.toLowerCase() ?? null
+      })
       .returning()
       .get();
   } catch (error: unknown) {
@@ -250,12 +279,14 @@ export async function listLatestVerdictsByBounty(dbInstance = db) {
  * and it doubles as the immutable audit trail the product is built on. A separate
  * cache table would be a second source of truth for the same fact.
  *
- * Scoped by bountyId, developer and contract as well as (prUrl, commitHash):
+ * Scoped by bountyId, developer, contract and chain as well as (prUrl, commitHash):
  * the ECDSA signature is computed over all of those, so a verdict signed for
- * bounty A cannot be replayed to release bounty B even when the commit matches.
+ * one deployment cannot be replayed against another even when the commit matches.
  *
  * Returns undefined for errored or missing rows — a provider failure is never
  * cached, so a transient outage can't pin a bounty to a bad verdict.
+ * Both provenance fields are required for a cache hit. An omitted field fails
+ * closed instead of widening the lookup to unattributed rows.
  */
 export async function findReusableAudit(
   params: {
@@ -264,9 +295,13 @@ export async function findReusableAudit(
     commitHash: string;
     developer: string;
     contractAddress?: string;
+    chainId?: number;
   },
   dbInstance = db
 ): Promise<AuditLog | undefined> {
+  const { contractAddress, chainId } = params;
+  if (!contractAddress || chainId === undefined || !Number.isSafeInteger(chainId)) return undefined;
+
   return dbInstance
     .select()
     .from(schema.auditLogs)
@@ -276,6 +311,8 @@ export async function findReusableAudit(
         eq(schema.auditLogs.prUrl, params.prUrl),
         eq(schema.auditLogs.commitHash, params.commitHash),
         eq(schema.auditLogs.developer, params.developer.toLowerCase()),
+        eq(schema.auditLogs.contractAddress, contractAddress.toLowerCase()),
+        eq(schema.auditLogs.chainId, chainId),
         eq(schema.auditLogs.status, "passed")
       )
     )

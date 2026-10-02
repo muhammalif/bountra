@@ -216,12 +216,15 @@ export async function apiRoutes(app: FastifyInstance, options: ApiRouteOptions =
         prBody = "Resolves issue",
         diff = "+ function fixed() { return true; }",
         changedFiles = [{ filename: "src/index.ts", status: "modified" }],
-        contractAddress = (process.env.ESCROW_CONTRACT_ADDRESS || "0x0000000000000000000000000000000000000001") as Address,
-        chainId = Number(process.env.CHAIN_ID || 97)
+        contractAddress = process.env.ESCROW_CONTRACT_ADDRESS as Address | undefined,
+        chainId = process.env.CHAIN_ID ? Number(process.env.CHAIN_ID) : undefined
       } = request.body;
 
       if (bountyId === undefined || !prUrl || !commitHash || !devWallet) {
         return reply.code(400).send({ error: "Missing required audit parameters" });
+      }
+      if (!contractAddress || chainId === undefined || !Number.isSafeInteger(chainId) || chainId < 1) {
+        return reply.code(503).send({ error: "Audit contract provenance is not configured" });
       }
 
       const parsedPr = parseGithubIssueOrPrUrl(prUrl);
@@ -255,6 +258,8 @@ export async function apiRoutes(app: FastifyInstance, options: ApiRouteOptions =
           prUrl,
           commitHash,
           developer: devWallet,
+          contractAddress,
+          chainId,
           ciStatus,
           ciDetail,
           integrityOk: null,
@@ -280,6 +285,8 @@ export async function apiRoutes(app: FastifyInstance, options: ApiRouteOptions =
           prUrl,
           commitHash,
           developer: devWallet,
+          contractAddress,
+          chainId,
           ciStatus,
           ciDetail,
           integrityOk: 0,
@@ -304,7 +311,14 @@ export async function apiRoutes(app: FastifyInstance, options: ApiRouteOptions =
       // The digests are recomputed rather than stored: they are pure functions of
       // the same params the signature was produced from, and recomputing removes
       // any chance of a cache hit disagreeing with on-chain bytes.
-      const cached = await findReusableAudit({ bountyId, prUrl, commitHash, developer: devWallet });
+      const cached = await findReusableAudit({
+        bountyId,
+        prUrl,
+        commitHash,
+        developer: devWallet,
+        contractAddress,
+        chainId
+      });
       if (cached) {
         app.log.info({ prUrl, commitHash }, "reusing existing audit verdict");
 
@@ -347,6 +361,8 @@ export async function apiRoutes(app: FastifyInstance, options: ApiRouteOptions =
             prUrl,
             commitHash,
             developer: devWallet,
+            contractAddress,
+            chainId,
             ciStatus,
             ciDetail,
             integrityOk: 1,
@@ -394,6 +410,8 @@ export async function apiRoutes(app: FastifyInstance, options: ApiRouteOptions =
         prUrl,
         commitHash,
         developer: devWallet,
+        contractAddress,
+        chainId,
         ciStatus,
         ciDetail,
         integrityOk: 1,
@@ -473,15 +491,25 @@ export async function apiRoutes(app: FastifyInstance, options: ApiRouteOptions =
         prUrl,
         commitHash,
         devWallet,
-        contractAddress = (process.env.ESCROW_CONTRACT_ADDRESS || "0x0000000000000000000000000000000000000001") as Address,
-        chainId = Number(process.env.CHAIN_ID || 97)
+        contractAddress = process.env.ESCROW_CONTRACT_ADDRESS as Address | undefined,
+        chainId = process.env.CHAIN_ID ? Number(process.env.CHAIN_ID) : undefined
       } = request.body;
 
       if (bountyId === undefined || !prUrl || !commitHash || !devWallet) {
         return reply.code(400).send({ error: "Missing required claim parameters" });
       }
+      if (!contractAddress || chainId === undefined || !Number.isSafeInteger(chainId) || chainId < 1) {
+        return reply.code(503).send({ error: "Audit contract provenance is not configured" });
+      }
 
-      const audit = await findReusableAudit({ bountyId, prUrl, commitHash, developer: devWallet });
+      const audit = await findReusableAudit({
+        bountyId,
+        prUrl,
+        commitHash,
+        developer: devWallet,
+        contractAddress,
+        chainId
+      });
 
       if (!audit || !audit.signature) {
         return reply.code(409).send({

@@ -137,9 +137,11 @@ export async function webhookRoutes(app: FastifyInstance, options: WebhookRouteO
       });
     }
 
-    const contractAddress = (process.env.ESCROW_CONTRACT_ADDRESS ||
-      "0x0000000000000000000000000000000000000001") as Address;
-    const chainId = Number(process.env.CHAIN_ID || 97);
+    const contractAddress = process.env.ESCROW_CONTRACT_ADDRESS as Address | undefined;
+    const chainId = process.env.CHAIN_ID ? Number(process.env.CHAIN_ID) : undefined;
+    if (!contractAddress || chainId === undefined || !Number.isSafeInteger(chainId) || chainId < 1) {
+      return reply.code(503).send({ status: "error", message: "Audit contract provenance is not configured" });
+    }
     const privateKey = requireAgentSigningKey();
 
     // Fetch the real PR. Previously this route trusted the webhook payload alone
@@ -210,6 +212,8 @@ export async function webhookRoutes(app: FastifyInstance, options: WebhookRouteO
         prUrl,
         commitHash: prFromApi.headCommitHash,
         developer: devWallet,
+        contractAddress,
+        chainId,
         ciStatus,
         ciDetail: JSON.stringify({ ...prFromApi.ciDetails, diffAvailable: false }),
         integrityOk: null,
@@ -235,6 +239,8 @@ export async function webhookRoutes(app: FastifyInstance, options: WebhookRouteO
         prUrl,
         commitHash: prFromApi.headCommitHash,
         developer: devWallet,
+        contractAddress,
+        chainId,
         ciStatus: "failed",
         ciDetail: JSON.stringify(prFromApi.ciDetails),
         integrityOk: 1,
@@ -261,6 +267,8 @@ export async function webhookRoutes(app: FastifyInstance, options: WebhookRouteO
         prUrl,
         commitHash: prFromApi.headCommitHash,
         developer: devWallet,
+        contractAddress,
+        chainId,
         ciStatus: "passed",
         ciDetail: JSON.stringify(prFromApi.ciDetails),
         integrityOk: 0,
@@ -313,6 +321,8 @@ export async function webhookRoutes(app: FastifyInstance, options: WebhookRouteO
       prUrl,
       commitHash: prFromApi.headCommitHash,
       developer: devWallet,
+      contractAddress,
+      chainId,
       ciStatus: "passed",
       ciDetail: JSON.stringify(prFromApi.ciDetails),
       integrityOk: 1,
