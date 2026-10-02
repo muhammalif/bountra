@@ -7,10 +7,11 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { buildServer } from "../src/index.js";
 import { signGithubPayload } from "../src/security/webhookSignature.js";
+import { createPassingBountyReader } from "./bounty-mock.js";
 import { createPassingGithubClient } from "./github-mock.js";
 
 const SECRET = process.env.GITHUB_WEBHOOK_SECRET as string;
-const app = buildServer({ githubClient: createPassingGithubClient() });
+const app = buildServer({ githubClient: createPassingGithubClient(), bountyReader: createPassingBountyReader() });
 
 // fastify.inject serializes `payload` to JSON itself, so the bytes the server
 // receives are the stringification of exactly this object — signing that same

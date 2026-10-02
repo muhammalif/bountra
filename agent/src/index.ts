@@ -27,6 +27,7 @@ import Fastify, { type FastifyServerOptions } from "fastify";
 import cors from "@fastify/cors";
 import { fileURLToPath } from "node:url";
 import { GithubAuditClient } from "./github/client.js";
+import type { BountyReader } from "./chain/readBounty.js";
 import { apiRoutes } from "./routes/api.js";
 import { webhookRoutes } from "./routes/webhook.js";
 
@@ -62,10 +63,11 @@ function allowedOrigins(): string[] | true {
 
 export interface BuildServerOptions extends FastifyServerOptions {
   githubClient?: GithubAuditClient;
+  bountyReader?: BountyReader;
 }
 
 export function buildServer(opts: BuildServerOptions = {}) {
-  const { githubClient, ...fastifyOptions } = opts;
+  const { githubClient, bountyReader, ...fastifyOptions } = opts;
   const app = Fastify({
     logger: false,
     ...fastifyOptions
@@ -95,7 +97,7 @@ export function buildServer(opts: BuildServerOptions = {}) {
     }
   );
 
-  app.register(apiRoutes, { githubClient });
+  app.register(apiRoutes, { githubClient, bountyReader });
   app.register(webhookRoutes, { githubClient });
 
   return app;

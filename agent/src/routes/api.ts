@@ -20,16 +20,24 @@ import {
 } from "../signer/index.js";
 import { evaluatePrWithGemini, mockEvaluatePr, EvaluatorUnavailableError } from "../evaluator/gemini.js";
 import { checkTestTampering } from "../evaluator/security.js";
+import { createBountyReader, type BountyReader } from "../chain/readBounty.js";
 import { verifyClaimOnChain } from "../chain/verifyClaim.js";
 import { GithubAuditClient, parseGithubIssueOrPrUrl, type CiData } from "../github/client.js";
-import type { Address, Hex } from "viem";
+import { zeroAddress, type Address, type Hex } from "viem";
 
 export interface ApiRouteOptions {
   githubClient?: GithubAuditClient;
+  bountyReader?: BountyReader;
 }
 
 export async function apiRoutes(app: FastifyInstance, options: ApiRouteOptions = {}) {
   const githubClient = options.githubClient || new GithubAuditClient();
+  const bountyReader =
+    options.bountyReader ||
+    createBountyReader({
+      escrowAddress: process.env.ESCROW_CONTRACT_ADDRESS,
+      rpcUrl: process.env.BSC_TESTNET_RPC_URL
+    });
 
   // Health check
   app.get("/health", async () => {
@@ -110,8 +118,48 @@ export async function apiRoutes(app: FastifyInstance, options: ApiRouteOptions =
       reply: FastifyReply
     ) => {
       const body = request.body;
-      if (body.bountyId === undefined || !body.issueUrl || !body.creator || !body.token || !body.amount) {
+      if (
+        !body ||
+        !Number.isSafeInteger(body.bountyId) ||
+        body.bountyId < 0 ||
+        typeof body.issueUrl !== "string" ||
+        !body.issueUrl ||
+        typeof body.creator !== "string" ||
+        !body.creator ||
+        typeof body.token !== "string" ||
+        !body.token ||
+        typeof body.amount !== "string" ||
+        !/^\d+$/.test(body.amount)
+      ) {
         return reply.code(400).send({ error: "Missing required fields" });
+      }
+
+      let onChain;
+      try {
+        onChain = await bountyReader(body.bountyId);
+      } catch (err: unknown) {
+        const reason = err instanceof Error ? err.message : String(err);
+        return reply.code(502).send({ error: `Unable to verify bounty on-chain: ${reason}` });
+      }
+
+      if (!onChain.ok) {
+        return reply.code(onChain.statusCode ?? 502).send({ error: onChain.reason });
+      }
+
+      if (onChain.bounty.creator.toLowerCase() === zeroAddress) {
+        return reply.code(400).send({ error: `Bounty ${body.bountyId} does not exist on-chain` });
+      }
+
+      if (body.creator.toLowerCase() !== onChain.bounty.creator.toLowerCase()) {
+        return reply.code(400).send({ error: "Bounty creator does not match the on-chain creator" });
+      }
+
+      if (body.token.toLowerCase() !== onChain.bounty.token.toLowerCase()) {
+        return reply.code(400).send({ error: "Bounty token does not match the on-chain token" });
+      }
+
+      if (BigInt(body.amount) !== onChain.bounty.amount) {
+        return reply.code(400).send({ error: "Bounty amount does not match the on-chain amount" });
       }
 
       try {

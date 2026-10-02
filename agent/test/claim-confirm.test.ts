@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { buildServer } from "../src/index.js";
 import { verifyClaimOnChain, BOUNTY_CLAIMED_TOPIC } from "../src/chain/verifyClaim.js";
 import type { Address, Hex } from "viem";
+import { createPassingBountyReader } from "./bounty-mock.js";
 import { createPassingGithubClient } from "./github-mock.js";
 
 /**
@@ -107,7 +108,7 @@ describe("verifyClaimOnChain", () => {
 });
 
 describe("POST /api/claim/confirm", () => {
-  const app = buildServer({ githubClient: createPassingGithubClient() });
+  const app = buildServer({ githubClient: createPassingGithubClient(), bountyReader: createPassingBountyReader() });
   const scope = Date.now();
   const bountyId = 800000 + (scope % 900);
   const devWallet = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8";
