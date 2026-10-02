@@ -14,12 +14,12 @@
 
 **Bountra** is a decentralized protocol that eliminates human review bottlenecks in Web3 open-source development and grant distribution. Project owners lock milestone bounties in escrow on BNB Smart Chain. When a developer submits a pull request on GitHub, Bountra's AI Agent conducts a rigorous **5-layer automated security audit**:
 1. **GitHub HMAC Verification** (Authentic webhook origin)
-2. **CI Hard Gate** (GitHub Actions unit tests must pass)
-3. **Anti-Tamper Gate** (Detects assertion weakening or test suite modification)
-4. **Gemini Flash Code Evaluation** (XML sandboxed semantic review)
+2. **CI Hard Gate** (Server-side GitHub CI evidence must be green)
+3. **Anti-Tamper Gate** (Blocks changes to protected test and CI file paths)
+4. **Gemini Flash Code Evaluation** (Sanitized, XML-delimited semantic review)
 5. **ECDSA Cryptographic Attestation** (Signed keccak256 proof)
 
-Once verified, the developer triggers instant on-chain escrow release in under 15 seconds. If a milestone expires without a valid submission, the sponsor reclaims 100% of their deposit.
+Once verified, the developer triggers on-chain escrow release from the Developer Hub. If a milestone expires without a valid submission, the sponsor reclaims 100% of their deposit.
 
 ---
 
@@ -39,9 +39,9 @@ bountra/
 ├── contracts/               # Foundry Smart Contracts (Solidity 0.8.28, Cancun EVM)
 │   ├── src/BountraEscrow.sol
 │   ├── test/BountraEscrow.t.sol
-│   └── script/DeployEscrow.s.sol
+│   └── script/Deploy.s.sol
 ├── agent/                   # Agent Evaluation Backend (Fastify + Gemini Flash)
-│   ├── src/evaluator/       # Gemini Flash code review, XML-sandboxed
+│   ├── src/evaluator/       # Gemini Flash review, sanitized XML-delimited prompts
 │   ├── src/signer/          # Viem ECDSA claim attestation
 │   ├── src/security/        # HMAC-SHA256 webhook signature verification
 │   ├── src/routes/webhook.ts
@@ -98,8 +98,8 @@ echo "GITHUB_WEBHOOK_SECRET=$(openssl rand -hex 32)" >> agent/.env
 cd agent && pnpm dev
 cloudflared tunnel --url http://localhost:3001
 
-# 3. register the hook (needs a token with admin:repo_hook — the agent's own
-#    GITHUB_TOKEN only reads PRs and check-runs)
+# 3. register the hook (needs a separate token with admin:repo_hook; the agent's
+#    GITHUB_TOKEN reads PRs/check-runs and writes the FR-7 audit comment)
 curl -X POST https://api.github.com/repos/<owner>/<repo>/hooks \
   -H "Authorization: Bearer $GITHUB_ADMIN_TOKEN" \
   -H "Accept: application/vnd.github+json" \
@@ -107,6 +107,11 @@ curl -X POST https://api.github.com/repos/<owner>/<repo>/hooks \
        "config":{"url":"https://<tunnel-host>/webhook/github",
                  "content_type":"json","secret":"<same secret>"}}'
 ```
+
+The agent's `GITHUB_TOKEN` is not read-only: the verified setup used the
+`repo` and `workflow` scopes so Octokit can read PR/check-run data and write the
+FR-7 audit comment. `GITHUB_ADMIN_TOKEN` is separate and is only used to create
+or update the webhook with `admin:repo_hook`.
 
 Every delivery is authenticated with `HMAC-SHA256(secret, raw body)` and checked
 against `x-hub-signature-256` in constant time. If `GITHUB_WEBHOOK_SECRET` is
@@ -124,16 +129,17 @@ work around.
 The PR body must reference the bounty issue (`Closes <issue-url>`) and the
 payout address (`Wallet: 0x...`), otherwise nothing is signed.
 
-For a demo, skip all of this: `POST /api/audit/evaluate` runs the same CI and
-integrity gates and needs no hook.
+For a direct agent demo, `POST /api/audit/evaluate` fetches CI status from
+GitHub and runs the integrity gate without a webhook, but it does not post the
+FR-7 GitHub comment and is not forwarded through the web proxy. The complete
+GitHub-to-agent flow uses the signed webhook.
 
-**Tunnel notes.** The `trycloudflare.com` host changes every time you restart
-cloudflared, so the hook config has to be updated with the new URL. Verify the
-public URL with an actual POST before you trust it — `GET /health` succeeding
-does not prove POST works. `localhost.run` free tunnels only proxy GET and
-answer `503 no tunnel here` to POST, which looks like a broken agent when it
-is not. Wait for the agent's `/health` before registering; under heavy load it
-can take up to a minute to bind its port.
+**Tunnel notes.** The verified setup used a Cloudflare quick tunnel. Its
+`trycloudflare.com` host changes every time you restart `cloudflared`, so update
+the hook URL each time. Use a public HTTPS tunnel that forwards POST; free
+`localhost.run` tunnels only proxy GET and answer `503 no tunnel here` to POST.
+Verify the public URL with an actual POST before trusting it — `GET /health`
+does not prove POST works. Wait for the agent's `/health` before registering.
 
 Only two `pull_request` actions are audited: `opened` (first submission) and
 `synchronize` (a new commit, the only thing that invalidates a prior verdict).
