@@ -56,7 +56,14 @@ export function checkTestTampering(
 export function sanitizeUntrustedContent(input: string): string {
   if (!input) return "";
   return input
-    .replace(/<\/?[a-zA-Z_:][a-zA-Z0-9._:-]*>/g, "[TAG_STRIPPED]")
+    .replace(
+      /<\s*\/\s*(?:assigned_issue|specification|untrusted_pr_submission|pr_title|pr_description|untrusted_git_diff)(?=\s|\/|>)[^>]*>/gi,
+      "[TAG_STRIPPED]"
+    )
+    .replace(
+      /<\s*\/?\s*[a-zA-Z_:][a-zA-Z0-9._:-]*(?:(?:\s+\/?\s*|\/\s*)[a-zA-Z_:][a-zA-Z0-9._:-]*(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'=<>]+))?)*\s*\/?\s*>/g,
+      "[TAG_STRIPPED]"
+    )
     .replace(/```/g, "'''");
 }
 
