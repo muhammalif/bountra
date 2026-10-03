@@ -36,6 +36,8 @@ agent/data/*.db
 agent/data/*.db-journal
 agent/data/*.db-shm
 agent/data/*.db-wal
+agent/data/*.bak*
+agent/data/*.db.bak*
 
 # OS
 .DS_Store
