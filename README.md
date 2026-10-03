@@ -1,6 +1,6 @@
 # Bountra
 
-> **Autonomous GitHub PR Auditor & Code-Gated Milestone Escrow on BNB Chain** 
+> **Autonomous GitHub PR Auditor & Code-Gated Milestone Escrow on BNB Chain**
 
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.28-363636?logo=solidity)](https://soliditylang.org/)
 [![Foundry](https://img.shields.io/badge/Foundry-363636?logo=ethereum)](https://book.getfoundry.sh/)
@@ -12,7 +12,7 @@
 
 ## 🌟 Executive Summary
 
-**Bountra** eliminates human review bottlenecks and milestone payment delays in Web3 open-source development. Sponsors lock milestone bounties in escrow on BNB Smart Chain. When a developer submits a pull request on GitHub, Bountra's AI Agent executes a rigorous **5-layer automated security and quality audit pipeline**:
+**Bountra** eliminates human review bottlenecks and milestone payment delays in Web3 open-source development. Project sponsors lock milestone bounties in escrow on BNB Smart Chain. When a developer submits a pull request on GitHub, Bountra's AI Agent executes a rigorous **5-layer automated security and quality audit pipeline**:
 
 1. **GitHub HMAC Verification** — Authenticates authentic webhook delivery origin via HMAC-SHA256 (`x-hub-signature-256`).
 2. **CI Hard Gate** — Fetches GitHub Actions check-runs server-side; non-passing test suites fail immediately with zero LLM expenditure.
@@ -35,63 +35,39 @@ Once attested, the developer triggers escrow release on-chain via the Developer 
 
 ## 🏛️ System Architecture
 
-```mermaid
-flowchart TD
-    subgraph Users ["👤 Actors & Interfaces"]
-        Sponsor["Sponsor / Project Owner"]
-        Dev["Contributor / Developer"]
-        WebUI["Web dApp (Next.js 14 + Privy + Wagmi)"]
-    end
-
-    subgraph GitHub ["🐙 GitHub Ecosystem"]
-        GH_Repo["GitHub Repository"]
-        GH_PR["Pull Request\n(Closes #issue, Wallet: 0x...)"]
-        GH_CI["GitHub Actions CI (check_runs)"]
-        GH_Hook["Webhook Delivery"]
-        GH_Comment["PR Audit Bot Comment"]
-    end
-
-    subgraph Agent ["🤖 Bountra Agent Backend (Fastify)"]
-        direction TB
-        WH_Gate["1. HMAC-SHA256 Origin Verification"]
-        CI_Gate["2. Server-Side CI Hard Gate"]
-        Tamper_Gate["3. Anti-Tamper Test Gate"]
-        AI_Gate["4. Gemini Flash Semantic Evaluator"]
-        ECDSA_Gate["5. ECDSA Signer (Viem keccak256 proof)"]
-        DB[("SQLite / Drizzle ORM\nAudit Logs & Bounties")]
-
-        WH_Gate --> CI_Gate --> Tamper_Gate --> AI_Gate --> ECDSA_Gate
-        ECDSA_Gate -.-> DB
-        ECDSA_Gate -.-> GH_Comment
-    end
-
-    subgraph Blockchain ["⛓️ BNB Smart Chain (BSC Testnet 97)"]
-        Escrow["BountraEscrow.sol"]
-        Vault[("Milestone Escrow Pool (USDT / ERC-20)")]
-        Escrow --- Vault
-    end
-
-    %% Sponsor Flow
-    Sponsor -->|"1. Lock ERC-20 & Define Milestone"| WebUI
-    WebUI -->|"createBounty()"| Escrow
-    WebUI -->|"POST /api/bounties (Register Issue Mapping)"| DB
-
-    %% Developer Flow
-    Dev -->|"2. Submit PR with Issue & Wallet"| GH_PR
-    GH_PR --> GH_Repo
-    GH_Repo -->|"Run Test Suite"| GH_CI
-    GH_Repo -->|"pull_request (opened, synchronize)"| GH_Hook
-    GH_Hook -->|"x-hub-signature-256"| WH_Gate
-    CI_Gate <-->|"Fetch check_runs via Octokit"| GH_CI
-    GH_Comment -.->|"Post Audit Verdict"| GH_PR
-
-    %% Payout Flow
-    Dev -->|"3. Request Claim Authorization"| WebUI
-    WebUI <-->|"POST /api/claim/authorize"| DB
-    WebUI -->|"claimBounty(signature, proof)"| Escrow
-    Escrow -->|"Verify ecrecover == agentSigner"| Escrow
-    Escrow -->|"Transfer Locked Tokens"| Dev
 ```
+┌────────────────────────────────────────────────────────────────────────┐
+│                          BOUNTRA PROTOCOL                              │
+└────────────────────────────────────────────────────────────────────────┘
+
+  [1. Deposit]                   [2. Webhook]                    [4. Claim]
+Sponsor (Web dApp)              GitHub PR Event              Developer (Web dApp)
+       │                               │                              │
+       ▼                               ▼                              ▼
+┌──────────────┐               ┌───────────────┐              ┌───────────────┐
+│ BountraEscrow│               │ Bountra Agent │              │ BountraEscrow │
+│  (BSC 97)    │               │ (Fastify API) │              │  (BSC 97)     │
+└──────────────┘               └───────┬───────┘              └───────┬───────┘
+                                       │                              │
+                        ┌──────────────┴──────────────┐               │
+                        │ 5-Layer Security Pipeline   │               │
+                        │  1. HMAC-SHA256 Origin Gate │               │
+                        │  2. GitHub Actions CI Gate  │               │
+                        │  3. Anti-Tamper Diff Scan   │               │
+                        │  4. Gemini Flash Semantic   │               │
+                        │  5. Viem ECDSA Signer       │               │
+                        └──────────────┬──────────────┘               │
+                                       │                              │
+                        [3. Cryptographic Signature]                  │
+                                       └──────────────────────────────┘
+                                          ecrecover() releases escrow
+```
+
+### Component Overview
+
+- **Smart Contract Layer (`contracts/`)**: `BountraEscrow.sol` holds ERC-20 deposits in escrow on BSC Testnet. Releases funds strictly upon verifying the agent's ECDSA signature via `ecrecover` with non-replayable digests (`usedSignatures[digest]`).
+- **Autonomous Agent Backend (`agent/`)**: Fastify microservice running Octokit, Drizzle ORM (SQLite), and Gemini Flash. Validates incoming PR events, queries CI check-runs, inspects test integrity, performs semantic evaluation, and issues signed attestations.
+- **Frontend dApp (`web/`)**: Next.js 14 App Router with Tailwind CSS, Privy wallet authentication, and Wagmi/Viem. Provides the Bounty Explorer, Sponsor Escrow Manager, and Developer Claim Drawer.
 
 ---
 
@@ -100,75 +76,163 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Sponsor as 👤 Sponsor
-    actor Dev as 👨💻 Developer
-    participant GH as 🐙 GitHub (Repo & CI)
-    participant Agent as 🤖 Bountra Agent
-    participant Web as 🌐 Bountra dApp
-    participant Contract as ⛓️ BountraEscrow (BSC)
+    actor Sponsor as Sponsor
+    actor Dev as Developer
+    participant GitHub as GitHub Actions
+    participant Agent as Bountra Agent
+    participant Escrow as BountraEscrow (BSC)
 
-    %% Phase 1
-    rect rgb(240, 245, 255)
-    Note over Sponsor, Contract: Phase 1: Milestone Bounty Creation
-    Sponsor->>Web: Connect wallet & fill issue URL, token, amount, deadline
-    Web->>Contract: createBounty(issueUrl, token, amount, deadline)
-    Contract-->>Web: Event: BountyCreated(bountyId)
-    Web->>Agent: POST /api/bounties (Register bountyId ↔ issueUrl mapping)
-    end
+    Note over Sponsor, Escrow: Phase 1: Bounty Creation
+    Sponsor->>Escrow: createBounty(issueUrl, token, amount, deadline)
+    Escrow-->>Sponsor: BountyCreated(bountyId)
+    Sponsor->>Agent: POST /api/bounties (Register bountyId ↔ issueUrl)
 
-    %% Phase 2
-    rect rgb(245, 255, 240)
-    Note over Dev, Agent: Phase 2: PR Submission & Autonomous 5-Layer Audit
-    Dev->>GH: Open Pull Request ("Closes <issue-url>", "Wallet: 0x...")
-    GH->>GH: Run GitHub Actions CI workflow
-    GH->>Agent: Webhook POST /webhook/github (HMAC-SHA256 payload)
-    Agent->>Agent: Layer 1: Verify HMAC-SHA256 signature
-    Agent->>GH: Layer 2: Fetch check-runs (CI Hard Gate)
-    Agent->>Agent: Layer 3: Scan diff for test tampering (Anti-Tamper Gate)
-    Agent->>Agent: Layer 4: Gemini Flash semantic code review (Score ≥ 70)
-    Agent->>Agent: Layer 5: Sign keccak256(bountyId, devWallet, commit, prUrl, contract, chainId)
-    Agent->>GH: Post comprehensive audit comment on PR
-    Agent->>Agent: Persist audit log & ECDSA signature in SQLite
-    end
+    Note over Dev, Agent: Phase 2: PR Submission & Multi-Gate Audit
+    Dev->>GitHub: Open PR with "Closes <issue-url>" and "Wallet: 0x..."
+    GitHub->>GitHub: Run CI test workflow
+    GitHub->>Agent: Webhook POST /webhook/github (HMAC-SHA256)
+    Agent->>GitHub: Verify check-runs & scan diff for test tampering
+    Agent->>Agent: Semantic code evaluation (Gemini Flash)
+    Agent->>GitHub: Post audit verdict comment on PR
+    Agent->>Agent: Store ECDSA signature proof in SQLite
 
-    %% Phase 3
-    rect rgb(255, 250, 240)
-    Note over Dev, Contract: Phase 3: Cryptographic Claim & Escrow Release
-    Dev->>Web: Open Developer Hub & launch Claim Drawer
-    Web->>Agent: POST /api/claim/authorize (bountyId, prUrl, commitHash, devWallet)
-    Agent-->>Web: Return stored ECDSA signature & message hash
-    Dev->>Web: Confirm claim transaction
-    Web->>Contract: claimBounty(bountyId, devWallet, prUrl, commitHash, signature)
-    Contract->>Contract: Verify ecrecover(messageHash, signature) == agentSigner
-    Contract->>Contract: Guard against replay (usedSignatures[messageHash] = true)
-    Contract->>Dev: Transfer locked ERC-20 tokens to developer wallet
-    end
+    Note over Dev, Escrow: Phase 3: Claim & Settlement
+    Dev->>Agent: Request claim proof (POST /api/claim/authorize)
+    Agent-->>Dev: Return signed attestation
+    Dev->>Escrow: claimBounty(bountyId, devWallet, prUrl, commit, signature)
+    Escrow->>Escrow: Verify ecrecover(messageHash) == agentSigner
+    Escrow->>Dev: Transfer locked ERC-20 bounty funds
 ```
 
-### Detailed Lifecycle Phases
+### Lifecycle Highlights
 
-1. **Milestone Creation & Funding**:
-   - The sponsor specifies the target GitHub Issue, ERC-20 token, reward amount, and deadline on the dApp.
-   - The contract transfers tokens into escrow and emits `BountyCreated`.
-   - The dApp registers the `bountyId ↔ issueUrl` mapping with the agent backend via `POST /api/bounties`.
-
-2. **PR Submission & Multi-Gate Audit**:
-   - The contributor opens a Pull Request referencing the issue and their payout address:
-     ```markdown
-     Closes https://github.com/<owner>/<repo>/issues/<id>
-     Wallet: 0xYourBscAddressHere
-     ```
-   - Only `opened` and `synchronize` webhook actions trigger audits. Non-diff actions (`closed`, `labeled`, `edited`) return `200 ignored` immediately without LLM costs.
-   - The pipeline sequentially verifies HMAC, checks GitHub CI completion, audits test integrity, and passes sandboxed diffs to Gemini Flash.
-   - If score $\ge 70$ and no security issues are found, the agent signs an ECDSA authorization hash and posts the verdict comment to GitHub.
-
-3. **Escrow Claiming**:
-   - The developer opens the Developer Hub on the dApp.
-   - The frontend calls `POST /api/claim/authorize` through the Next.js server proxy (`/api/agent/...`) to retrieve the stored passing signature.
-   - The developer submits `claimBounty(...)` on BNB Chain. The smart contract validates the agent's signature on-chain and releases the bounty funds directly to the developer's wallet.
+1. **Bounty Funding**: Sponsors lock rewards into `BountraEscrow.sol` and register the bounty with the agent backend so incoming PRs can be matched.
+2. **Autonomous Audit**: PRs must reference the issue (`Closes <issue-url>`) and payout wallet (`Wallet: 0x...`). Only code-modifying events (`opened`, `synchronize`) trigger the 5-layer audit pipeline. Non-diff events (`closed`, `labeled`, `edited`) return `200 ignored` immediately.
+3. **Cryptographic Claim**: Developers claim directly from the dApp. The agent issues the stored signature only for verified submissions, enabling trustless on-chain settlement.
 
 ---
-ß
+
+## ⚡ Quickstart
+
+### Prerequisites
+
+- **Node.js**: `v20.x` or `v22.x` (LTS recommended)
+- **Package Manager**: `pnpm >= 9.x`
+- **Foundry**: `forge`, `cast`, `anvil` ([Installation Guide](https://book.getfoundry.sh/getting-started/installation))
+- **Tunnel Tool** *(optional, for local webhooks)*: `cloudflared` or `ngrok`
+
+---
+
+### 1. Smart Contracts (`contracts/`)
+
+```bash
+cd contracts
+
+# Copy environment template
+cp .env.example .env
+
+# Build contracts
+forge build
+
+# Run unit, fuzz, and replay protection tests
+forge test -vvv
+```
+
+---
+
+### 2. Agent Backend (`agent/`)
+
+```bash
+cd agent
+
+# Copy environment template
+cp .env.example .env
+
+# Install dependencies & initialize SQLite database
+pnpm install
+
+# Run test suite (125 tests: mock evaluator, CI gate, tamper gate, signer)
+pnpm test
+
+# Start agent service
+pnpm dev
+# Server listening on http://localhost:3001
+```
+
+#### Key Agent Environment Variables (`agent/.env`)
+
+| Variable | Description |
+|---|---|
+| `AGENT_PRIVATE_KEY` | Hex private key used to sign ECDSA claim authorizations on-chain |
+| `ESCROW_CONTRACT_ADDRESS` | Deployed `BountraEscrow` address on BSC Testnet |
+| `CHAIN_ID` | `97` (BSC Testnet) or `5611` (opBNB Testnet) |
+| `GEMINI_API_KEY` | Google AI Studio API Key for code evaluation |
+| `GITHUB_TOKEN` | GitHub Personal Access Token (`repo`, `workflow` scopes) |
+| `GITHUB_WEBHOOK_SECRET` | Shared secret to verify GitHub webhook HMAC-SHA256 signatures |
+| `DATABASE_PATH` | Path to SQLite database file (`./data/bountra.db`) |
+
+---
+
+### 3. Frontend Web dApp (`web/`)
+
+```bash
+cd web
+
+# Copy environment template
+cp .env.example .env.local
+
+# Install dependencies
+pnpm install
+
+# Start development server
+pnpm dev
+# Frontend accessible on http://localhost:3000
+```
+
+#### Key Frontend Environment Variables (`web/.env.local`)
+
+| Variable | Description |
+|---|---|
+| `NEXT_PUBLIC_PRIVY_APP_ID` | Privy App ID for embedded wallet & GitHub authentication |
+| `NEXT_PUBLIC_ESCROW_CONTRACT_ADDRESS` | `0xbe576879961Bd8cdf7CfA72F146C8a3E352c7260` |
+| `NEXT_PUBLIC_CHAIN_ID` | `97` (BSC Testnet) |
+| `NEXT_PUBLIC_AGENT_API_URL` | `http://localhost:3001` |
+
+---
+
+### 4. GitHub Webhook Setup (Optional / Production Flow)
+
+To receive live GitHub PR events on your local machine:
+
+1. **Configure Webhook Secret:**
+   ```bash
+   echo "GITHUB_WEBHOOK_SECRET=$(openssl rand -hex 32)" >> agent/.env
+   ```
+
+2. **Expose Agent Port 3001:**
+   ```bash
+   cloudflared tunnel --url http://localhost:3001
+   ```
+
+3. **Register Webhook in GitHub Repository Settings:**
+   - **Payload URL**: `https://<your-tunnel-url>/webhook/github`
+   - **Content type**: `application/json` *(⚠️ Must be JSON, not form-urlencoded)*
+   - **Secret**: Value of `GITHUB_WEBHOOK_SECRET`
+   - **Events**: Select **Pull requests**
+
+#### Webhook Response Codes
+
+| Status Code | Status | Meaning |
+|---|---|---|
+| `200` | `audited` | Full 5-layer audit executed; verdict and signature produced |
+| `200` | `skipped` | PR references an issue with no registered bounty in DB |
+| `200` | `pending_wallet` | PR body is missing the required `Wallet: 0x...` line |
+| `200` | `ignored` | Non-code action (`labeled`, `closed`, `edited`) — zero LLM cost |
+| `401` | `unauthorized` | Missing or invalid HMAC-SHA256 signature (`x-hub-signature-256`) |
+| `503` | `unavailable` | `GITHUB_WEBHOOK_SECRET` unset in `agent/.env` (fails closed by design) |
+
+---
+
 ## 📁 Repository Structure
 
 ```
@@ -183,12 +247,11 @@ bountra/
 │   ├── src/security/            # HMAC-SHA256 signature verification
 │   ├── src/routes/              # Webhook endpoint & claim authorization proxy
 │   └── src/db/                  # SQLite schema & Drizzle ORM client
-├── web/                     # Frontend dApp (Next.js 14 App Router + Tailwind + Wagmi)
-│   ├── src/app/page.tsx         # Landing page, pipeline visualizer, audit terminal
-│   ├── src/app/explore/page.tsx # Bounty directory & creation modal
-│   ├── src/app/dashboard/       # Sponsor Escrow Management & Developer Claims
-│   └── src/components/modals/   # CreateBountyModal & ClaimBountyDrawer
-└── docs/                    # Technical specs, architecture, & master plan
+└── web/                     # Frontend dApp (Next.js 14 App Router + Tailwind + Wagmi)
+    ├── src/app/page.tsx         # Landing page, pipeline visualizer, audit terminal
+    ├── src/app/explore/page.tsx # Bounty directory & creation modal
+    ├── src/app/dashboard/       # Sponsor Escrow Management & Developer Claims
+    └── src/components/modals/   # CreateBountyModal & ClaimBountyDrawer
 ```
 
 ---
