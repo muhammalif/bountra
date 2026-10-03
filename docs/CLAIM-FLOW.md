@@ -2,7 +2,7 @@
 
 > [!warning] Status
 > **Implemented, tested, and verified end-to-end on BSC Testnet.**
-> The current agent suite reports 93 tests: 86 passed, 0 failed, and 7 skipped.
+> The current agent suite reports 125 tests: 118 passed, 0 failed, and 7 skipped.
 > The skips are the live-chain cases gated by `NO_CHAIN`; they are not failures.
 > A connected-wallet claim has settled on-chain and its transaction was recorded
 > back into the agent database.
@@ -155,7 +155,7 @@ recoverMessageAddress({ message: { raw: rawHash }, signature })
 | Check | Result |
 |-------|--------|
 | Agent `npx tsc --noEmit` | **PASS** |
-| Agent test suite | **93 tests: 86 passed, 0 failed, 7 skipped**; the skips are `NO_CHAIN` live-chain cases |
+| Agent test suite | **125 tests: 118 passed, 0 failed, 7 skipped**; the skips are `NO_CHAIN` live-chain cases |
 | Foundry contract tests | **15 passed, 0 failed** |
 | Claim path | **VERIFIED** — dashboard → Developer Hub → eligible audit → claim drawer |
 | On-chain settlement | **VERIFIED** — receipt, `BountyClaimed`, and ERC-20 movement observed |
@@ -163,18 +163,23 @@ recoverMessageAddress({ message: { raw: rawHash }, signature })
 
 ---
 
-## 8. Remaining limitation
+## 8. Design decision
 
-### 8.1 Mock claim path is not implemented
+### 8.1 Mock bounties are display-only, deliberately
 
-The hybrid model is only half built:
+The hybrid model has two populations, and they are intentionally not symmetrical:
 
 - ✅ on-chain bounty + agent signature → real claim
-- ❌ mock bounty namespace + local claim action
+- 🚫 mock bounty namespace → shown, badged `DEMO`, never claimable
 
-Deliberately not faked: the dashboard shows nothing rather than inventing
-claimable rows. If a mock claim path is added later, it must use a non-numeric
-namespace and a non-contract action path.
+Nothing is faked: a mock id sent to `claimBounty()` reverts with `BountyNotFound()`,
+so inventing a claimable mock row could only ever produce a lie. Mocks are **displayed**
+rather than hidden, but they are inert — `ClaimBountyDrawer` hard-stops on `isMock`
+before any authorization call, every mock listing carries a visible `DEMO` badge, and
+`/explore` counts the mock and on-chain populations separately.
+
+If a mock claim path is added later, it must use a non-numeric namespace and a
+non-contract action path.
 
 ---
 

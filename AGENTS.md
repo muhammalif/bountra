@@ -13,7 +13,16 @@ Autonomous GitHub PR Auditor & Code-Gated Milestone Escrow on BNB Chain.
 | `docs/DESIGN.md` | Brand identity, color tokens, UI patterns, anti-AI-slop rules |
 | `docs/SCHEMA.md` | On-chain storage layout, off-chain DB schema, ERD |
 | `docs/RULES.md` | Runtime rules, security boundaries, LLM guardrails, conventions |
-| `docs/plans/master-plan.md` | Original ideation & planning document |
+| `docs/plans/master-plan.md` | **Live project status** — sprint progress, verified on-chain state, test baseline, ranked blockers |
+
+> **Note on `docs/`:** the whole tree is gitignored (`.gitignore:17:/docs/`), so these docs
+> are disk-only and won't show in `git status`. A few files (`ARCHITECTURE.md`,
+> `CLAIM-FLOW.md`, `DEMO_SCRIPT.md`, `PITCH.md`, `WEBHOOK-SETUP.md`) were already tracked
+> before the ignore rule landed and remain tracked — gitignore only affects new files.
+>
+> `docs/plans/master-plan.md` is a **symlink** to the Bountra master plan in the Obsidian
+> vault. It is the single source of truth for project status, not an archived planning doc,
+> and editing it from either path writes the same file.
 
 ## Stack
 
@@ -33,7 +42,7 @@ bountra/
 ├── web/                   # Next.js dashboard & landing page
 ├── scripts/               # Deploy scripts, seed data, utilities
 └── docs/
-    ├── plans/             # Source planning docs (master-plan.md)
+    ├── plans/             # master-plan.md — symlink to Obsidian vault, live project status
     ├── PRD.md
     ├── ARCHITECTURE.md
     ├── DESIGN.md

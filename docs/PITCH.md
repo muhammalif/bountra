@@ -8,9 +8,12 @@
 * **Project Name:** Bountra
 * **Tagline:** Autonomous GitHub PR Auditor & Code-Gated Milestone Escrow on BNB Chain
 * **Track:** AI Agents Track
-* **Live Web App:** `http://localhost:3000` (Multi-Page Next.js 14 dApp)
+* **Live Web App:** `http://localhost:3000` (Multi-Page Next.js 14.2.35 dApp)
 * **Smart Contract (BSC Testnet, Chain ID 97):** [`0xbe576879961Bd8cdf7CfA72F146C8a3E352c7260`](https://testnet.bscscan.com/address/0xbe576879961Bd8cdf7CfA72F146C8a3E352c7260)
-* **Agent Signer Address:** `0x2e10F4a41F665c657Ff4deC4A780e8734A066848`
+* **Escrow Token:** Bountra Mock USDT (`0x189C7cA448e89DaF1C2A1C9a4DB4D9Ec475441c1`) — a testnet ERC-20, **not real USDT**. The escrow contract, agent, and settlement path are production code running on testnet; the funding asset is the only testnet component.
+* **Agent Signer Address:** `0x2e10F4a41F665c657Ff4deC4A780e8734A066848` — the key that produced the 3 live settlements. Judges can verify each `ecrecover` on BscScan against the contract's `usedSignatures` and the audit records.
+* **Live State:** 7 escrows created, 3 settled on-chain, 400 Mock USDT currently held in escrow.
+* **Test Baseline:** 125 agent tests (118 passed, 0 failed, 7 skipped — live-chain tests gated by `NO_CHAIN`), 15/15 Foundry contract tests, web type-check clean.
 
 ---
 
@@ -69,7 +72,7 @@ Bountra bridges GitHub repositories with BNB Smart Chain smart contracts through
 ```
 
 * **Smart Contracts:** Solidity `0.8.28`, EVM `cancun`, OpenZeppelin v5, Foundry testing suite (15/15 tests passing).
-* **Agent Engine:** Fastify REST API, Viem Cryptographic Signer, Octokit API, Google Gemini Flash Free Tier. Current agent suite: 93 tests, 86 passed, 0 failed, and 7 skipped because the live BSC testnet tests are gated by `NO_CHAIN`.
+* **Agent Engine:** Fastify REST API, Viem Cryptographic Signer, Octokit API, Google Gemini Flash Free Tier (`gemini-3.1-flash-lite` with `gemini-3.6-flash` fallback). Current agent suite: 125 tests, 118 passed, 0 failed, 7 skipped because the live BSC testnet tests are gated by `NO_CHAIN`.
 * **Frontend Web App:** Next.js 14 App Router (`14.2.35`), Tailwind CSS, Magic UI (Animated Beam, Animated Shiny Text), Privy Auth & Embedded EVM Wallet, Wagmi v2 / Viem, Anti-Slop UI.
 
 ---
@@ -89,5 +92,5 @@ Bountra bridges GitHub repositories with BNB Smart Chain smart contracts through
 ## 🗺️ Roadmap & Ecosystem Future
 
 1. **opBNB Gasless Settlement:** Implementing Account Abstraction (ERC-4337) and Paymasters on opBNB to offer zero gas fees for developer payouts.
-2. **Multi-Agent Audit Quorum:** Integrating a 2-of-3 agent consensus model (e.g. Gemini 2.0 + Claude 3.5 Sonnet + DeepSeek V3) with aggregated BLS signatures.
+2. **Multi-Agent Audit Quorum:** Integrating a 2-of-3 agent consensus model (e.g. Gemini 3.1 Flash Lite + a second provider + DeepSeek-class model) with aggregated BLS signatures.
 3. **EigenLayer / AVS Integration:** Economic slashing for autonomous agent validators to guarantee attestation integrity.

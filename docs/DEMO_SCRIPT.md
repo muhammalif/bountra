@@ -51,12 +51,14 @@
   * Navigate to **Explore** (`/explore`) or click **Create Bounty** button.
   * Open `CreateBountyModal`:
     * Paste the GitHub Issue URL used by the demo repository.
-    * Reward: `100 USDT` on BSC Testnet.
+    * Reward: `100 Mock USDT` on BSC Testnet (testnet ERC-20 at
+      `0x189C7cA448e89DaF1C2A1C9a4DB4D9Ec475441c1`, not real USDT — the escrow
+      contract and its 400 Mock USDT are live, the funding asset is testnet).
     * Duration: `14 Days`.
   * Trigger Wagmi approval $\rightarrow$ deposit into `BountraEscrow.sol`.
   * Show BSCScan Testnet contract link (`0xbe576879961Bd8cdf7CfA72F146C8a3E352c7260`).
 * **Voiceover:**
-  > "Sponsors lock bounty rewards in our audited Solidity escrow contract on BNB Chain. The funds are protected by immutable smart contract logic: if no valid PR is merged before the deadline, the sponsor can claim a 100% refund."
+  > "Sponsors lock bounty rewards in our Solidity escrow contract on BNB Smart Chain Testnet. The funds are protected by immutable smart contract logic: if no valid PR is merged before the deadline, the sponsor can claim a 100% refund."
 
 ---
 
@@ -90,12 +92,17 @@
 
 ### Scene 6: Conclusion & Impact on BNB Ecosystem (3:10 – 3:30)
 * **Visual:**
-  * Return to hero overview showing live stats.
-  * Display tech stack badges: *BNB Chain • Bountra Agent • Foundry • Fastify • Next.js 14 • Privy*.
+  * Return to hero overview. It reads `bountyCount()` live from the escrow
+    contract, so the counter shows the real number of escrows on BSC Testnet
+    (7 at the time of recording — do not hardcode a number in the video).
+  * Display tech stack badges: *BNB Chain • Bountra Agent • Foundry • Fastify • Next.js 14.2.35 • Privy*.
 * **Voiceover:**
-  > "By eliminating manual review friction and securing milestone escrow with autonomous AI attestation, Bountra accelerates open-source development across the BNB Chain ecosystem.
-  > Autonomous. Code-gated. Cryptographically verified.
+  > "By eliminating manual review friction and securing milestone escrow with autonomous AI attestation, Bountra accelerates open-source development across the BNB Chain ecosystem. Autonomous. Code-gated. Cryptographically verified.
   > This is Bountra."
+  > *(If a judge asks about mainnet readiness: the escrow contract, the agent,
+  > and the settlement path are all real and running on BNB Smart Chain Testnet.
+  > The funding asset is a testnet ERC-20. Moving to mainnet is a deployment and
+  > liquidity step, not a rewrite.)*
 
 ---
 
