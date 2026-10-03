@@ -20,24 +20,32 @@ import {
 } from "../signer/index.js";
 import { evaluatePrWithGemini, mockEvaluatePr, EvaluatorUnavailableError } from "../evaluator/gemini.js";
 import { checkTestTampering } from "../evaluator/security.js";
-import { createBountyReader, type BountyReader } from "../chain/readBounty.js";
 import { verifyClaimOnChain } from "../chain/verifyClaim.js";
+import { reconcileBounties, formatReconcileReport } from "../chain/reconcile.js";
+import {
+  createBountyReader,
+  createBountyCountReader,
+  type BountyReader,
+  type BountyCountReader
+} from "../chain/readBounty.js";
 import { GithubAuditClient, parseGithubIssueOrPrUrl, type CiData } from "../github/client.js";
 import { zeroAddress, type Address, type Hex } from "viem";
+
+const chainConfig = {
+  escrowAddress: process.env.ESCROW_CONTRACT_ADDRESS,
+  rpcUrl: process.env.BSC_TESTNET_RPC_URL
+};
 
 export interface ApiRouteOptions {
   githubClient?: GithubAuditClient;
   bountyReader?: BountyReader;
+  bountyCountReader?: BountyCountReader;
 }
 
 export async function apiRoutes(app: FastifyInstance, options: ApiRouteOptions = {}) {
   const githubClient = options.githubClient || new GithubAuditClient();
-  const bountyReader =
-    options.bountyReader ||
-    createBountyReader({
-      escrowAddress: process.env.ESCROW_CONTRACT_ADDRESS,
-      rpcUrl: process.env.BSC_TESTNET_RPC_URL
-    });
+  const bountyReader = options.bountyReader || createBountyReader(chainConfig);
+  const bountyCountReader = options.bountyCountReader || createBountyCountReader(chainConfig);
 
   // Health check
   app.get("/health", async () => {
@@ -78,6 +86,36 @@ export async function apiRoutes(app: FastifyInstance, options: ApiRouteOptions =
         ])
       )
     };
+  });
+
+  /**
+   * Reconcile the bounty table against the escrow contract.
+   *
+   * POST /api/bounties registers one bounty from one caller's payload, which
+   * leaves two holes: a bounty funded outside the web UI never gets a row (so the
+   * webhook answers "No active bounty found" and the main flow dead-ends), and a
+   * bounty claimed from a browser keeps its stale status until something writes
+   * it back. This repairs both from the only authority that knows the real
+   * state.
+   *
+   * POST rather than GET: it writes. The result carries the full report so a
+   * caller can see what moved, not just that it ran.
+   */
+  app.post("/api/bounties/reconcile", async (_request: FastifyRequest, reply: FastifyReply) => {
+    let result: Awaited<ReturnType<typeof reconcileBounties>>;
+    try {
+      result = await reconcileBounties(bountyReader, bountyCountReader);
+    } catch (err: unknown) {
+      // Almost always an RPC failure. Failing closed matters here: a caller that
+      // got a 200 would assume the DB now matches the chain.
+      const reason = err instanceof Error ? err.message : String(err);
+      return reply.code(502).send({ error: `Reconciliation could not read the chain: ${reason}` });
+    }
+
+    // Unreadable ids are a partial result, not a clean pass. 207 keeps it
+    // distinct from the 200 above and from the 502 that means "nothing ran".
+    const statusCode = result.report.unreadable.length > 0 ? 207 : 200;
+    return reply.code(statusCode).send({ data: result.report, summary: formatReconcileReport(result) });
   });
 
   // Get single bounty with latest audit log

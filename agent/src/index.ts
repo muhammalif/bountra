@@ -28,6 +28,8 @@ import cors from "@fastify/cors";
 import { fileURLToPath } from "node:url";
 import { GithubAuditClient } from "./github/client.js";
 import type { BountyReader } from "./chain/readBounty.js";
+import { reconcileBounties, formatReconcileReport } from "./chain/reconcile.js";
+import { createBountyReader, createBountyCountReader } from "./chain/readBounty.js";
 import { apiRoutes } from "./routes/api.js";
 import { webhookRoutes } from "./routes/webhook.js";
 
@@ -99,6 +101,58 @@ export function buildServer(opts: BuildServerOptions = {}) {
 
   app.register(apiRoutes, { githubClient, bountyReader });
   app.register(webhookRoutes, { githubClient });
+
+  /**
+   * Repair the bounty table at boot.
+   *
+   * The DB is filled in by `POST /api/bounties`, one caller at a time, so a
+   * bounty funded outside the web UI has no row and a bounty claimed from a
+   * browser keeps a stale status. Both leave the feed describing escrow state
+   * the contract contradicts. Reconciling here means the first request after a
+   * restart already reads accurate rows, without anyone having to remember to
+   * trigger it.
+   *
+   * Skipped under NODE_ENV=test. Tests build a server per file against a
+   * throwaway database and a fake escrow address; reconciling would dial the
+   * real public RPC on every one of them, and would then write chain rows into
+   * a database whose contents those tests are asserting on. `POST
+   * /api/bounties/reconcile` still works there, and `test/bounty-reconcile.test.ts`
+   * drives the reconciler directly.
+   *
+   * In production, failure is logged and swallowed: an unreachable RPC must not
+   * keep the agent from serving, since the webhook and audit paths work off the
+   * DB alone.
+   */
+  if (process.env.NODE_ENV !== "test") {
+    app.addHook("onReady", async () => {
+      const reader =
+        bountyReader ||
+        createBountyReader({
+          escrowAddress: process.env.ESCROW_CONTRACT_ADDRESS,
+          rpcUrl: process.env.BSC_TESTNET_RPC_URL
+        });
+      const countReader = createBountyCountReader({
+        escrowAddress: process.env.ESCROW_CONTRACT_ADDRESS,
+        rpcUrl: process.env.BSC_TESTNET_RPC_URL
+      });
+
+      try {
+        const result = await reconcileBounties(reader, countReader);
+        const { report } = result;
+        if (report.inserted.length || report.statusCorrected.length || report.unresolvableIssueUrls.length) {
+          app.log.info(
+            { reconcile: report },
+            `chain→db reconciliation at boot: ${formatReconcileReport(result)}`
+          );
+        }
+      } catch (err) {
+        app.log.warn(
+          { err: err instanceof Error ? err.message : String(err) },
+          "chain→db reconciliation skipped; DB may not match the escrow contract"
+        );
+      }
+    });
+  }
 
   return app;
 }

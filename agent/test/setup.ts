@@ -25,6 +25,13 @@ process.env.AGENT_PRIVATE_KEY =
 process.env.ESCROW_CONTRACT_ADDRESS = "0x0000000000000000000000000000000000000001";
 process.env.CHAIN_ID = "97";
 
+// `buildServer` reconciles the bounty table against the escrow contract on
+// ready. `NODE_ENV=test` is what turns that off (see src/index.ts), because every
+// test that starts a server would otherwise dial the real public RPC — and some
+// of them assert on the error a dead RPC produces, so they cannot be given a
+// blank one either. This flag is what those two needs share.
+process.env.NODE_ENV = "test";
+
 // The webhook route fails closed when this is unset (503). Tests that exercise
 // the webhook must therefore pin a throwaway secret and sign their payloads —
 // which is the point: no delivery reaches the audit path unsigned.
