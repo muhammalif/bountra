@@ -112,111 +112,59 @@ sequenceDiagram
 
 ---
 
-## ⚡ Quickstart
+## ⚡ Quickstart & Local Verification
 
-### Prerequisites
+Judges and reviewers can verify the entire protocol locally in under 2 minutes:
 
-- **Node.js**: `v20.x` or `v22.x` (LTS recommended)
-- **Package Manager**: `pnpm >= 9.x`
-- **Foundry**: `forge`, `cast`, `anvil` ([Installation Guide](https://book.getfoundry.sh/getting-started/installation))
-- **Tunnel Tool** *(optional, for local webhooks)*: `cloudflared` or `ngrok`
-
----
-
-### 1. Smart Contracts (`contracts/`)
+### 1. Verify Smart Contracts (Foundry)
 
 ```bash
 cd contracts
-
-# Copy environment template
-cp .env.example .env
-
-# Build contracts
-forge build
-
-# Run unit, fuzz, and replay protection tests
 forge test -vvv
 ```
+> Runs 15 unit, fuzz, and invariant tests covering escrow locking, ECDSA signature verification, replay protection (`usedSignatures[digest]`), and deadline refunds.
 
 ---
 
-### 2. Agent Backend (`agent/`)
+### 2. Verify Autonomous Agent Suite (Fastify)
 
 ```bash
 cd agent
-
-# Copy environment template
-cp .env.example .env
-
-# Install dependencies & initialize SQLite database
 pnpm install
-
-# Run test suite (125 tests: mock evaluator, CI gate, tamper gate, signer)
 pnpm test
-
-# Start agent service
-pnpm dev
-# Server listening on http://localhost:3001
 ```
-
-#### Key Agent Environment Variables (`agent/.env`)
-
-| Variable | Description |
-|---|---|
-| `AGENT_PRIVATE_KEY` | Hex private key used to sign ECDSA claim authorizations on-chain |
-| `ESCROW_CONTRACT_ADDRESS` | Deployed `BountraEscrow` address on BSC Testnet |
-| `CHAIN_ID` | `97` (BSC Testnet) or `5611` (opBNB Testnet) |
-| `GEMINI_API_KEY` | Google AI Studio API Key for code evaluation |
-| `GITHUB_TOKEN` | GitHub Personal Access Token (`repo`, `workflow` scopes) |
-| `GITHUB_WEBHOOK_SECRET` | Shared secret to verify GitHub webhook HMAC-SHA256 signatures |
-| `DATABASE_PATH` | Path to SQLite database file (`./data/bountra.db`) |
+> Runs 125 offline integration tests across the 5-layer audit pipeline (HMAC auth, server-side CI hard gates, anti-tamper scans, structured output validation, and Viem ECDSA signer) with zero live API calls required.
 
 ---
 
-### 3. Frontend Web dApp (`web/`)
+### 3. Run Frontend dApp (Next.js 14)
 
 ```bash
 cd web
-
-# Copy environment template
 cp .env.example .env.local
-
-# Install dependencies
-pnpm install
-
-# Start development server
-pnpm dev
-# Frontend accessible on http://localhost:3000
+pnpm install && pnpm dev
+# Frontend live on http://localhost:3000
 ```
 
-#### Key Frontend Environment Variables (`web/.env.local`)
+<details>
+<summary><b>🔧 Advanced: End-to-End Live Webhook Setup</b></summary>
 
-| Variable | Description |
-|---|---|
-| `NEXT_PUBLIC_PRIVY_APP_ID` | Privy App ID for embedded wallet & GitHub authentication |
-| `NEXT_PUBLIC_ESCROW_CONTRACT_ADDRESS` | `0xbe576879961Bd8cdf7CfA72F146C8a3E352c7260` |
-| `NEXT_PUBLIC_CHAIN_ID` | `97` (BSC Testnet) |
-| `NEXT_PUBLIC_AGENT_API_URL` | `http://localhost:3001` |
-
----
-
-### 4. GitHub Webhook Setup (Optional / Production Flow)
-
-To receive live GitHub PR events on your local machine:
+To test live GitHub PR webhooks locally using a Cloudflare tunnel:
 
 1. **Configure Webhook Secret:**
    ```bash
    echo "GITHUB_WEBHOOK_SECRET=$(openssl rand -hex 32)" >> agent/.env
    ```
 
-2. **Expose Agent Port 3001:**
+2. **Start Agent & Expose Port 3001:**
    ```bash
+   cd agent && pnpm dev
    cloudflared tunnel --url http://localhost:3001
    ```
 
-3. **Register Webhook in GitHub Repository Settings:**
-   - **Payload URL**: `https://<your-tunnel-url>/webhook/github`
-   - **Content type**: `application/json` *(⚠️ Must be JSON, not form-urlencoded)*
+3. **Register Webhook in GitHub Repository:**
+   - **Payload URL**: `https://<tunnel-host>/webhook/github`
+   - **Content type**: `application/json` *(⚠️ Must be JSON, not application/x-www-form-urlencoded)*
    - **Secret**: Value of `GITHUB_WEBHOOK_SECRET`
    - **Events**: Select **Pull requests**
 
@@ -230,6 +178,8 @@ To receive live GitHub PR events on your local machine:
 | `200` | `ignored` | Non-code action (`labeled`, `closed`, `edited`) — zero LLM cost |
 | `401` | `unauthorized` | Missing or invalid HMAC-SHA256 signature (`x-hub-signature-256`) |
 | `503` | `unavailable` | `GITHUB_WEBHOOK_SECRET` unset in `agent/.env` (fails closed by design) |
+
+</details>
 
 ---
 
