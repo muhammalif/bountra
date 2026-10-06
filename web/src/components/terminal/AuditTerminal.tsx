@@ -16,13 +16,16 @@ import { AUDIT_SCENARIOS, AuditScenario } from "./audit-scenarios";
 import { PipelineTracker } from "./PipelineTracker";
 import { cn } from "@/lib/utils";
 
+const LOG_STREAM_INTERVAL_MS = 260;
+const FINAL_VERDICT_PAUSE_MS = 4500;
+
 export function AuditTerminal() {
   const [selectedScenario, setSelectedScenario] = useState<AuditScenario>(AUDIT_SCENARIOS[0]);
   const [activeTab, setActiveTab] = useState<"logs" | "json" | "crypto">("logs");
   const [visibleLogCount, setVisibleLogCount] = useState<number>(AUDIT_SCENARIOS[0].logs.length);
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
-  const terminalBottomRef = useRef<HTMLDivElement>(null);
+  const terminalContainerRef = useRef<HTMLDivElement>(null);
 
   const startSimulation = (scenario: AuditScenario) => {
     setSelectedScenario(scenario);
@@ -32,21 +35,40 @@ export function AuditTerminal() {
   };
 
   useEffect(() => {
-    if (!isRunning) return;
+    if (!isRunning || activeTab !== "logs") return;
 
     if (visibleLogCount < selectedScenario.logs.length) {
       const timer = setTimeout(() => {
         setVisibleLogCount((prev) => prev + 1);
-      }, 450);
+      }, LOG_STREAM_INTERVAL_MS);
       return () => clearTimeout(timer);
     } else {
       setIsRunning(false);
     }
-  }, [isRunning, visibleLogCount, selectedScenario]);
+  }, [activeTab, isRunning, selectedScenario, visibleLogCount]);
 
   useEffect(() => {
-    if (activeTab === "logs" && terminalBottomRef.current) {
-      terminalBottomRef.current.scrollIntoView({ behavior: "smooth" });
+    if (
+      activeTab !== "logs" ||
+      isRunning ||
+      visibleLogCount < selectedScenario.logs.length
+    ) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      if (activeTab === "logs") {
+        setVisibleLogCount(1);
+        setIsRunning(true);
+      }
+    }, FINAL_VERDICT_PAUSE_MS);
+
+    return () => clearTimeout(timer);
+  }, [activeTab, isRunning, selectedScenario, visibleLogCount]);
+
+  useEffect(() => {
+    if (activeTab === "logs" && terminalContainerRef.current) {
+      terminalContainerRef.current.scrollTop = terminalContainerRef.current.scrollHeight;
     }
   }, [visibleLogCount, activeTab]);
 
@@ -100,13 +122,11 @@ export function AuditTerminal() {
             <button
               key={sc.id}
               onClick={() => startSimulation(sc)}
-              disabled={isRunning}
               className={cn(
                 "flex items-center justify-center gap-2 rounded-lg border px-3 py-1.5 min-h-[44px] font-mono text-xs font-medium transition-all active:scale-[0.98]",
                 selectedScenario.id === sc.id
                   ? "border-brand-primary bg-brand-primary/10 text-brand-primary"
-                  : "border-surface-border bg-surface-secondary/80 text-content-secondary hover:border-surface-border-hover hover:text-content-primary",
-                isRunning && "opacity-60 cursor-not-allowed"
+                  : "border-surface-border bg-surface-secondary/80 text-content-secondary hover:border-surface-border-hover hover:text-content-primary"
               )}
             >
               <Play className="h-3 w-3" />
@@ -131,7 +151,6 @@ export function AuditTerminal() {
             </div>
             <button
               onClick={() => startSimulation(selectedScenario)}
-              disabled={isRunning}
               title="Replay Simulation"
               className="sm:hidden rounded p-1.5 text-content-muted hover:bg-surface-primary hover:text-content-primary transition-colors disabled:opacity-40 shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center active:scale-[0.98]"
             >
@@ -175,7 +194,6 @@ export function AuditTerminal() {
             </button>
             <button
               onClick={() => startSimulation(selectedScenario)}
-              disabled={isRunning}
               title="Replay Simulation"
               className="hidden sm:flex ml-2 rounded p-1 min-h-[44px] min-w-[44px] items-center justify-center text-content-muted hover:bg-surface-primary hover:text-content-primary transition-colors disabled:opacity-40 active:scale-[0.98]"
             >
@@ -192,7 +210,7 @@ export function AuditTerminal() {
 
         <div className="p-3 sm:p-6 font-mono text-xs">
           {activeTab === "logs" && (
-            <div className="space-y-2 sm:space-y-2.5 min-h-[260px] sm:min-h-[280px] max-h-[380px] sm:max-h-[420px] overflow-y-auto pr-1 sm:pr-2">
+            <div ref={terminalContainerRef} className="space-y-2 sm:space-y-2.5 min-h-[260px] sm:min-h-[280px] max-h-[380px] sm:max-h-[420px] overflow-y-auto pr-1 sm:pr-2">
               {selectedScenario.logs.slice(0, visibleLogCount).map((log, idx) => (
                 <div key={idx} className="flex items-start gap-2 sm:gap-3 font-mono leading-relaxed text-[11px] sm:text-xs">
                   <span className="text-content-muted shrink-0 text-[10px] sm:text-[11px]">{log.timestamp}</span>
@@ -213,7 +231,6 @@ export function AuditTerminal() {
                   <span>Processing security pipeline...</span>
                 </div>
               )}
-              <div ref={terminalBottomRef} />
             </div>
           )}
 

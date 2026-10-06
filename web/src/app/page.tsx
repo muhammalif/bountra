@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useReadContract } from "wagmi";
@@ -13,6 +14,8 @@ import { INITIAL_BOUNTIES } from "@/lib/mock-bounties";
 import { BountyItem } from "@/types/bounty";
 import { BOUNTRA_ESCROW_ADDRESS, BOUNTRA_ESCROW_ABI } from "@/config/contracts";
 import { ArrowRight, Compass } from "lucide-react";
+
+const SideRays = dynamic(() => import("@/components/backgrounds/SideRays"), { ssr: false });
 
 export default function HomePage() {
   const [mounted, setMounted] = useState(false);
@@ -37,9 +40,29 @@ export default function HomePage() {
     <div className="min-h-screen flex flex-col justify-between bg-surface-primary selection:bg-brand-primary selection:text-black">
       <Header />
       <main className="flex-1 flex flex-col justify-center">
-        <HeroSection
-          bountyCount={typeof bountyCount === "bigint" ? Number(bountyCount) : 0}
-        />
+        <div className="relative w-full overflow-hidden">
+          <div
+            className="absolute inset-0 overflow-hidden pointer-events-none"
+            style={{
+              maskImage: "linear-gradient(to bottom, black 45%, transparent 100%)",
+              WebkitMaskImage: "linear-gradient(to bottom, black 45%, transparent 100%)"
+            }}
+          >
+            <SideRays
+              rayColor1="#F0B90B"
+              rayColor2="#EAB308"
+              speed={1.8}
+              intensity={1.2}
+              spread={2.2}
+              origin="top-right"
+              saturation={1.0}
+              blend={0.6}
+              falloff={1.8}
+              opacity={0.15}
+            />
+          </div>
+          <HeroSection bountyCount={typeof bountyCount === "bigint" ? Number(bountyCount) : 0} />
+        </div>
 
         <AuditTerminal />
 
