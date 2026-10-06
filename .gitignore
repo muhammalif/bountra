@@ -16,6 +16,10 @@ __pycache__/
 # Untracked on purpose — see README for the public substitute.
 /docs/
 
+# video
+# ignore all files in video folder
+video/
+
 # Local QA tooling. These drive a headless Chrome over raw CDP to measure tap
 # targets and layout overflow, and three of them hardcode an absolute path to
 # one developer's machine. They are development aids, not project tooling.
