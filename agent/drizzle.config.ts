@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({
@@ -5,6 +6,6 @@ export default defineConfig({
   out: "./drizzle",
   dialect: "sqlite",
   dbCredentials: {
-    url: "./data/bountra.db"
+    url: process.env.DATABASE_PATH || "./data/bountra.db"
   }
 });
