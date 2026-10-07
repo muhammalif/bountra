@@ -63,6 +63,20 @@ function allowedOrigins(): string[] | true {
   return list;
 }
 
+function validateRequiredEnv() {
+  if (process.env.NODE_ENV === "test") return;
+
+  const required = ["AGENT_PRIVATE_KEY", "ESCROW_CONTRACT_ADDRESS", "CHAIN_ID"] as const;
+  const missing = required.filter((name) => !process.env[name]?.trim());
+
+  if (missing.length) {
+    for (const name of missing) {
+      console.error(`Missing required environment variable: ${name}`);
+    }
+    process.exit(1);
+  }
+}
+
 export interface BuildServerOptions extends FastifyServerOptions {
   githubClient?: GithubAuditClient;
   bountyReader?: BountyReader;
@@ -158,9 +172,36 @@ export function buildServer(opts: BuildServerOptions = {}) {
 }
 
 export async function start() {
+  validateRequiredEnv();
+
   const port = Number(process.env.PORT || 3001);
   const host = process.env.HOST || "0.0.0.0";
   const app = buildServer({ logger: true });
+
+  let shuttingDown = false;
+  const shutdown = async (signal: NodeJS.Signals) => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+
+    console.log(`Received ${signal}; shutting down gracefully.`);
+    const forceExit = setTimeout(() => {
+      console.error("Graceful shutdown timed out after 10 seconds; forcing exit.");
+      process.exit(1);
+    }, 10_000);
+
+    try {
+      await app.close();
+      clearTimeout(forceExit);
+      process.exit(0);
+    } catch (err) {
+      clearTimeout(forceExit);
+      app.log.error(err);
+      process.exit(1);
+    }
+  };
+
+  process.on("SIGTERM", () => void shutdown("SIGTERM"));
+  process.on("SIGINT", () => void shutdown("SIGINT"));
 
   try {
     await app.listen({ port, host });

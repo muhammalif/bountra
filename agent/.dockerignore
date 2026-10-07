@@ -1,0 +1,9 @@
+node_modules/
+dist/
+data/
+*.log
+.env*
+test/
+.git/
+drizzle/
+drizzle.config.ts

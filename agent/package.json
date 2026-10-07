@@ -1,6 +1,7 @@
 {
   "name": "bountra-agent",
   "version": "0.1.0",
+  "packageManager": "pnpm@10.4.0",
   "description": "Bountra AI Agent Backend — PR Auditor and Milestone Signer",
   "main": "src/index.ts",
   "type": "module",
@@ -29,5 +30,13 @@
     "drizzle-kit": "^0.30.4",
     "tsx": "^4.19.3",
     "typescript": "^5.7.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@google/genai",
+      "better-sqlite3",
+      "esbuild",
+      "protobufjs"
+    ]
   }
 }
